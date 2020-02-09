@@ -1,6 +1,6 @@
 {
   "name": "apollo-node-client",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Node.js Client for Apollo",
   "author": "zhangxh1023",
   "email": "zhangxh1023@qq.com",
@@ -13,15 +13,17 @@
     "enums",
     "lib",
     "types",
-    "tsconfig.json"
+    "tsconfig.json",
+    "index.d.ts"
   ],
   "scripts": {
     "build": "tsc --sourceMap false",
     "clean": "rm -rf dist coverage",
     "lint": "eslint --ext .ts .",
     "fix": "eslint --fix --ext .ts .",
-    "prepare": "npm run build",
-    "test": "jest --coverage"
+    "prepublishOnly": "npm run clean && npm run build && npm run lint && npm run test",
+    "test": "jest",
+    "test:coverage": "jest --coverage"
   },
   "license": "MIT",
   "devDependencies": {
