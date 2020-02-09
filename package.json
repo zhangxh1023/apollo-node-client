@@ -7,6 +7,10 @@
   "url": "https://github.com/zhangxh1023/apollo-node-client",
   "main": "./dist/lib/config_service.js",
   "types": "./index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:zhangxh1023/apollo-node-client.git"
+  },
   "files": [
     "dist",
     "constants",
