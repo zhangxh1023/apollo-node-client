@@ -1,0 +1,31 @@
+{
+  "name": "apollo-node-client",
+  "version": "0.0.1",
+  "description": "Node.js Client for Apollo",
+  "main": "dist/lib/config_service.js",
+  "scripts": {
+    "build": "tsc --sourceMap false",
+    "clean": "rm -rf dist coverage",
+    "lint": "eslint --ext .ts .",
+    "fix": "eslint --fix --ext .ts .",
+    "test": "jest --coverage"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^25.1.1",
+    "@types/node": "^13.7.0",
+    "@types/qs": "^6.9.0",
+    "@types/request": "^2.48.4",
+    "@typescript-eslint/eslint-plugin": "^2.19.0",
+    "@typescript-eslint/parser": "^2.19.0",
+    "eslint": "^6.8.0",
+    "jest": "^25.1.0",
+    "ts-jest": "^25.2.0",
+    "typescript": "^3.7.5"
+  },
+  "dependencies": {
+    "qs": "^6.9.1",
+    "request": "^2.88.0"
+  }
+}
