@@ -5,7 +5,8 @@
   "author": "zhangxh1023",
   "email": "zhangxh1023@qq.com",
   "url": "https://github.com/zhangxh1023/apollo-node-client",
-  "main": "dist/lib/config_service.js",
+  "main": "./dist/lib/config_service.js",
+  "types": "./index.d.ts",
   "files": [
     "dist",
     "constants",
@@ -19,6 +20,7 @@
     "clean": "rm -rf dist coverage",
     "lint": "eslint --ext .ts .",
     "fix": "eslint --fix --ext .ts .",
+    "prepare": "npm run build",
     "test": "jest --coverage"
   },
   "license": "MIT",
