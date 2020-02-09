@@ -1,8 +1,19 @@
 {
   "name": "apollo-node-client",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Node.js Client for Apollo",
+  "author": "zhangxh1023",
+  "email": "zhangxh1023@qq.com",
+  "url": "https://github.com/zhangxh1023/apollo-node-client",
   "main": "dist/lib/config_service.js",
+  "files": [
+    "dist",
+    "constants",
+    "enums",
+    "lib",
+    "types",
+    "tsconfig.json"
+  ],
   "scripts": {
     "build": "tsc --sourceMap false",
     "clean": "rm -rf dist coverage",
@@ -10,7 +21,6 @@
     "fix": "eslint --fix --ext .ts .",
     "test": "jest --coverage"
   },
-  "author": "",
   "license": "MIT",
   "devDependencies": {
     "@types/jest": "^25.1.1",
