@@ -41,14 +41,14 @@ it('should return the correct query params', () => {
   const notifications: {
     namespaceName: string;
     notificationId: number;
-  }[] = JSON.parse(strQueryParams);
+  }[] = JSON.parse(strQueryParams as string);
   expect(notifications.sort()).toEqual([{ namespaceName: 'test', notificationId: -1 }, { namespaceName: 'first.json', notificationId: -1 }].sort());
 });
 
 jest.mock('../lib/request');
 const mockRequest = Request as jest.Mocked<typeof Request>;
 const response = {
-  error: null,
+  error: undefined,
   response: { statusCode: 200 } as request.Response,
   body: 'xxxx',
 };

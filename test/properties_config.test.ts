@@ -9,7 +9,7 @@ const mockRequest = Request as jest.Mocked<typeof Request>;
 const mockResponse = (configurations: {
   [key: string]: unknown;
 }): {
-  error: Error;
+  error: void | Error;
   response: request.Response;
   body: unknown;
 } => {
@@ -21,7 +21,7 @@ const mockResponse = (configurations: {
     'releaseKey': '20200203154030-1dc524aa9a4a5974'
   };
   return {
-    error: null,
+    error: undefined,
     response: { statusCode: 200 } as request.Response,
     body: JSON.stringify(body),
   };

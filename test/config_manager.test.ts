@@ -7,7 +7,7 @@ jest.mock('../lib/request');
 const mockRequest = Request as jest.Mocked<typeof Request>;
 
 const mockFn = (url: string): Promise<{
-  error: Error;
+  error: void | Error;
   response: request.Response;
   body: unknown;
 }> => {
@@ -17,7 +17,7 @@ const mockFn = (url: string): Promise<{
       const notifications: {
         namespaceName: string;
         notificationId: number;
-      }[] = JSON.parse(encodedURL.searchParams.get('notifications'));
+      }[] = JSON.parse(encodedURL.searchParams.get('notifications') as string);
       const res: {
         namespaceName: string;
         notificationId: number;
@@ -32,21 +32,21 @@ const mockFn = (url: string): Promise<{
       }
       if (res.length > 0) {
         return resolve({
-          error: null,
+          error: undefined,
           response: { statusCode: 200 } as request.Response,
           body: JSON.stringify(res),
         });
       }
       setTimeout(() => {
         return resolve({
-          error: null,
+          error: undefined,
           response: { statusCode: 304 } as request.Response,
           body: '',
         });
       }, 60000);
     } else {
       return resolve({
-        error: null,
+        error: undefined,
         response: { statusCode: 304 } as request.Response,
         body: '',
       });

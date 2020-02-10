@@ -35,7 +35,7 @@ it('should get the correct query params', () => {
 jest.mock('../lib/request');
 const mockRequest = Request as jest.Mocked<typeof Request>;
 const response = {
-  error: null,
+  error: undefined,
   response: { statusCode: 200 } as request.Response,
   body: 'xxxx',
 };

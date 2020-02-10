@@ -8,7 +8,7 @@ import { PropertyChangeType } from '../enums/property_change_types';
 jest.mock('../lib/request');
 const mockRequest = Request as jest.Mocked<typeof Request>;
 const mockResponse = (configs: JSONType): {
-  error: Error;
+  error: void | Error;
   response: request.Response;
   body: unknown;
 } => {
@@ -22,7 +22,7 @@ const mockResponse = (configs: JSONType): {
     'releaseKey': '20200203154030-1dc524aa9a4a5974'
   };
   return {
-    error: null,
+    error: undefined,
     response: { statusCode: 200 } as request.Response,
     body: JSON.stringify(body),
   };

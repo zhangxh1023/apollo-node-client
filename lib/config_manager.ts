@@ -3,6 +3,7 @@ import { PropertiesConfig } from './properties_config';
 import { ConfigTypes } from '../enums/config_types';
 import { CLUSTER_NAMESPACE_SEPARATOR } from '../constants';
 import { LoadNotificationsService } from './load_notifications_service';
+import { JSONConfig } from './json_config';
 
 export class ConfigManager {
   
@@ -33,7 +34,7 @@ export class ConfigManager {
       case ConfigTypes.XML:
         throw new Error('XML type is not support!');
       case ConfigTypes.JSON:
-        config = new PropertiesConfig({
+        config = new JSONConfig({
           ...this.options,
           namespaceName,
         }, ip);
@@ -73,6 +74,11 @@ export class ConfigManager {
     }, this.configsMap);
     try {
       const { error, response, body } = await LoadNotificationsService.loadNotifications(url);
+
+
+      // console.log(`configsMapVersion: ${configsMapVersion}, error: ${error}, body: ${body}`);
+
+
       if (error) {
         throw error;
       }

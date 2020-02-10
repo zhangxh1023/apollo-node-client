@@ -27,9 +27,9 @@ export class PropertiesConfig extends EventEmitter implements ConfigInterface {
     this.ip = ip;
   }
 
-  public getProperty(key: string, defaultValue?: string): string {
+  public getProperty(key: string, defaultValue?: string): void | string {
     const value = this.configs.get(key);
-    if (value) {
+    if (value || value === '') {
       return value;
     }
     return defaultValue;
@@ -51,7 +51,7 @@ export class PropertiesConfig extends EventEmitter implements ConfigInterface {
     return this.options.namespaceName;
   }
 
-  public getIp(): string {
+  public getIp(): void | string {
     return this.ip;
   }
 
@@ -202,7 +202,7 @@ export class PropertiesConfig extends EventEmitter implements ConfigInterface {
       }
     }
 
-    let configChangeEvent: ConfigChangeEvent;
+    let configChangeEvent: void | ConfigChangeEvent;
 
     if (configChanges.size > 0) {
       configChangeEvent = new ConfigChangeEvent(this.getNamespaceName(), configChanges);

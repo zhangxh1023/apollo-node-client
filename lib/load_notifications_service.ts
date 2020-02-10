@@ -23,6 +23,8 @@ export class LoadNotificationsService {
       notifications.push(temp);
     }
     const strParams = qs.stringify({
+      appId: options.appId,
+      cluster: options.clusterName,
       notifications: JSON.stringify(notifications),
     });
     url = url + '?' + strParams;
@@ -30,7 +32,7 @@ export class LoadNotificationsService {
   }
 
   public static loadNotifications(url: string, options?: request.CoreOptions): Promise<{
-    error: Error;
+    error: void | Error;
     response: request.Response;
     body: unknown;
   }> {

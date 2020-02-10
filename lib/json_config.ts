@@ -28,26 +28,29 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
     this.ip = ip;
   }
 
-  public getProperty(key: string, defaultValue?: JSONValueType): JSONValueType {
+  public getProperty(key: string, defaultValue?: JSONValueType): void | JSONValueType {
     const keySlice = key.split('.');
     const value = this.getPropertyFromJSONAndKey(this.configs, keySlice);
-    if (value) {
+    if (value !== undefined) {
       return value;
     }
     return defaultValue;
   }
 
-  private getPropertyFromJSONAndKey(JSONValue: JSONValueType, keySlice: string[]): void | JSONValueType {
+  private getPropertyFromJSONAndKey(JSONValue: void | JSONValueType, keySlice: string[]): void | JSONValueType {
     if (keySlice.length === 0) {
       return JSONValue;
     }
-    if (typeof JSONValue === 'string' || typeof JSONValue === 'number' || typeof JSONValue === 'boolean' || JSONValue === null) {
+    if (typeof JSONValue === 'string' || typeof JSONValue === 'number' || typeof JSONValue === 'boolean' || JSONValue === null || JSONValue === undefined) {
       return;
     }
     if (Array.isArray(JSONValue)) {
       return;
     }
     const key = keySlice.shift();
+    if (!key) {
+      return;
+    }
     return this.getPropertyFromJSONAndKey(JSONValue[key], keySlice);
   }
 
@@ -80,7 +83,7 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
     return this;
   }
 
-  public getIp(): string {
+  public getIp(): void | string {
     return this.ip;
   }
 
@@ -152,23 +155,23 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
     newJSONValue === null) {
       if (oldJSONValue !== newJSONValue) {
         changed[prefix] = newJSONValue;
-        return {
-          added,
-          deleted,
-          changed,
-        };
       }
+      return {
+        added,
+        deleted,
+        changed,
+      };
     }
 
     if (Array.isArray(oldJSONValue) || Array.isArray(newJSONValue)) {
       if (JSON.stringify(oldJSONValue) !== JSON.stringify(newJSONValue)) {
         changed[prefix] = newJSONValue;
-        return {
-          added,
-          deleted,
-          changed,
-        };
       }
+      return {
+        added,
+        deleted,
+        changed,
+      };
     }
 
     for (const key of Object.keys(oldJSONValue)) {
@@ -204,9 +207,9 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
     [key: string]: JSONValueType;
   }, changed: {
     [key: string]: JSONValueType;
-  }, newConfigs: JSONValueType, listeners: number): ConfigChangeEvent {
+  }, newConfigs: JSONValueType, listeners: number): void | ConfigChangeEvent {
     // if changeListeners > 0, not create ConfigChange
-    let configChangeEvent: ConfigChangeEvent;
+    let configChangeEvent: void | ConfigChangeEvent;
     if (listeners > 0) {
       const configChanges: Map<string, ConfigChange> = new Map();
 
