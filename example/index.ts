@@ -14,7 +14,11 @@ async function main(): Promise<void> {
     for (const key of changeEvent.changedKeys()) {
       const change = changeEvent.getChange(key);
       if (change) {
-        console.log(`namespace: ${change.getNamespace()}, changeType: ${change.getChangeType()}, propertyName: ${change.getPropertyName()}, oldValue: ${change.getOldValue()}, newValue: ${change.getNewValue()}`);
+        console.log(`namespace: ${change.getNamespace()},
+        changeType: ${change.getChangeType()},
+        propertyName: ${change.getPropertyName()},
+        oldValue: ${change.getOldValue()},
+        newValue: ${change.getNewValue()}`);
       }
     }
   });
@@ -23,7 +27,11 @@ async function main(): Promise<void> {
     for (const key of changeEvent.changedKeys()) {
       const change = changeEvent.getChange(key);
       if (change) {
-        console.log(`namespace: ${change.getNamespace()}, changeType: ${change.getChangeType()}, propertyName: ${change.getPropertyName()}, oldValue: ${JSON.stringify(change.getOldValue())}, newValue: ${JSON.stringify(change.getNewValue())}`);
+        console.log(`namespace: ${change.getNamespace()},
+        changeType: ${change.getChangeType()},
+        propertyName: ${change.getPropertyName()},
+        oldValue: ${JSON.stringify(change.getOldValue())},
+        newValue: ${JSON.stringify(change.getNewValue())}`);
       }
     }
   });

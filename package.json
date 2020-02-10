@@ -20,6 +20,11 @@
     "tsconfig.json",
     "index.d.ts"
   ],
+  "keywords": [
+    "apollo",
+    "ctrip apollo",
+    "ctrip apollo client"
+  ],
   "scripts": {
     "build": "tsc --sourceMap false",
     "clean": "rm -rf dist coverage",
