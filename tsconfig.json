@@ -70,7 +70,7 @@
     "node_modules",
     "dist",
     "test",
-    "example",
+    "examples",
     "index.d.ts",
   ]
 }
