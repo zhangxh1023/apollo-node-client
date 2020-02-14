@@ -13,10 +13,6 @@
   },
   "files": [
     "dist",
-    "constants",
-    "enums",
-    "lib",
-    "types",
     "tsconfig.json",
     "index.d.ts"
   ],

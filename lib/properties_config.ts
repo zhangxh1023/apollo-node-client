@@ -1,10 +1,10 @@
 import { ConfigInterface } from './config';
-import { NOTIFICATION_ID_PLACEHOLDER, CHANGE_EVENT_NAME } from '../constants';
+import { NOTIFICATION_ID_PLACEHOLDER, CHANGE_EVENT_NAME } from './constants';
 import { LoadConfigService } from './load_config_service';
 import { EventEmitter } from 'events';
 import { ConfigChangeEvent } from './config_change_event';
 import { ConfigChange } from './config_change';
-import { PropertyChangeType } from '../enums/property_change_types';
+import { PropertyChangeType } from './property_change_types';
 
 export class PropertiesConfig extends EventEmitter implements ConfigInterface {
 

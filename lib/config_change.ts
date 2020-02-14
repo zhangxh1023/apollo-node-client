@@ -1,5 +1,5 @@
-import { PropertyChangeType } from '../enums/property_change_types';
-import { JSONValueType } from '../types/jsonType';
+import { PropertyChangeType } from './property_change_types';
+import { JSONValueType } from './types';
 
 export class ConfigChange {
   constructor(

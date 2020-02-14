@@ -1,7 +1,7 @@
 import { ConfigInterface } from './config';
 import { PropertiesConfig } from './properties_config';
-import { ConfigTypes } from '../enums/config_types';
-import { CLUSTER_NAMESPACE_SEPARATOR } from '../constants';
+import { ConfigTypes } from './config_types';
+import { CLUSTER_NAMESPACE_SEPARATOR } from './constants';
 import { LoadNotificationsService } from './load_notifications_service';
 import { JSONConfig } from './json_config';
 

@@ -1,10 +1,10 @@
 import { ConfigInterface } from './config';
-import { JSONValueType } from '../types/jsonType';
-import { NOTIFICATION_ID_PLACEHOLDER, CHANGE_EVENT_NAME } from '../constants';
+import { JSONValueType } from './types';
+import { NOTIFICATION_ID_PLACEHOLDER, CHANGE_EVENT_NAME } from './constants';
 import { LoadConfigService } from './load_config_service';
 import { ConfigChangeEvent } from './config_change_event';
 import { ConfigChange } from './config_change';
-import { PropertyChangeType } from '../enums/property_change_types';
+import { PropertyChangeType } from './property_change_types';
 import { EventEmitter } from 'events';
 
 export class JSONConfig extends EventEmitter implements ConfigInterface {

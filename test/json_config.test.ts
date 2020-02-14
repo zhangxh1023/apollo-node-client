@@ -1,9 +1,9 @@
 import { JSONConfig } from '../lib/json_config';
 import { Request } from '../lib/request';
 import * as request from 'request';
-import { JSONType } from '../types/jsonType';
+import { JSONType } from '../lib/types';
 import { ConfigChangeEvent } from '../lib/config_change_event';
-import { PropertyChangeType } from '../enums/property_change_types';
+import { PropertyChangeType } from '../lib/property_change_types';
 
 jest.mock('../lib/request');
 const mockRequest = Request as jest.Mocked<typeof Request>;

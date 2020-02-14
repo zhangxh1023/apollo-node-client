@@ -1,4 +1,4 @@
-import { JSONValueType } from '../types/jsonType';
+import { JSONValueType } from './types';
 import { ConfigChangeEvent } from './config_change_event';
 
 export interface ConfigInterface {

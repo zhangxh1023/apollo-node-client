@@ -1,4 +1,4 @@
-import { NAMESPACE_APPLICATION, CLUSTER_NAME_DEFAULT } from '../constants';
+import { NAMESPACE_APPLICATION, CLUSTER_NAME_DEFAULT } from './constants';
 import { ConfigManager } from './config_manager';
 import { ConfigInterface } from './config';
 
