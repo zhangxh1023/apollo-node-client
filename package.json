@@ -13,7 +13,6 @@
   },
   "files": [
     "dist",
-    "tsconfig.json",
     "index.d.ts"
   ],
   "keywords": [

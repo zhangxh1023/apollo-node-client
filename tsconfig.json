@@ -65,7 +65,7 @@
   },
   "include": [
     "lib/**/*.ts",
-    "examples", // for debug
+    // "examples", // for debug
   ],
   "exclude": [
   ]
