@@ -27,7 +27,7 @@ export class ConfigService {
   }
 
   /**
-   * getConfig
+   * get Config by namespaceName
    */
   public getConfig(namespaceName: string, ip?: string): Promise<ConfigInterface> {
     return this.configManager.getConfig(namespaceName, ip);
