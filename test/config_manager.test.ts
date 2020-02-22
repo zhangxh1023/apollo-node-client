@@ -78,6 +78,13 @@ it('should throw Error with not support', () => {
 });
 
 it('should return a properties config', async () => {
-  const config = await configManager.getConfig('test');
-  expect(config.getNamespaceName()).toBe('test');
+  const config1 = await configManager.getConfig('test');
+  const config2 = await configManager.getConfig('test.properties');
+  expect(config1.getNamespaceName()).toBe('test');
+  expect(config2.getNamespaceName()).toBe('test');
+});
+
+it('should return a json config', async () => {
+  const config = await configManager.getConfig('test.json');
+  expect(config.getNamespaceName()).toBe('test.json');
 });
