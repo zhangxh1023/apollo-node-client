@@ -5,7 +5,6 @@ import { EventEmitter } from 'events';
 import { ConfigChangeEvent } from './config_change_event';
 import { ConfigChange } from './config_change';
 import { PropertyChangeType } from './property_change_types';
-import { ConfigTypes } from './config_types';
 
 export class PropertiesConfig extends EventEmitter implements ConfigInterface {
 
@@ -16,8 +15,6 @@ export class PropertiesConfig extends EventEmitter implements ConfigInterface {
   private notificationId = NOTIFICATION_ID_PLACEHOLDER;
 
   private readonly REQUEST_TIME_OUT = 70000;
-
-  public readonly configType = ConfigTypes.PROPERTIES;
 
   constructor(private readonly options: {
     configServerUrl: string;

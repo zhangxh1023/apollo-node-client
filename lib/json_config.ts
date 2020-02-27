@@ -6,7 +6,6 @@ import { ConfigChangeEvent } from './config_change_event';
 import { ConfigChange } from './config_change';
 import { PropertyChangeType } from './property_change_types';
 import { EventEmitter } from 'events';
-import { ConfigTypes } from './config_types';
 
 export class JSONConfig extends EventEmitter implements ConfigInterface {
 
@@ -17,8 +16,6 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
   private configs: JSONValueType = Object.create(null);
 
   private readonly REQUEST_TIME_OUT = 70000;
-
-  public readonly configType = ConfigTypes.JSON;
 
   constructor(private readonly options: {
     configServerUrl: string;
