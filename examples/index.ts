@@ -1,5 +1,5 @@
-import { ConfigService } from '../lib/config_service';
-import { ConfigChangeEvent } from '../lib/config_change_event';
+import { ConfigService } from '..';
+import { ConfigChangeEvent } from '..';
 
 const service = new ConfigService({
   configServerUrl: 'http://localhost:8080/',
