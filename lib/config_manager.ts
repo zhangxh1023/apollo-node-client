@@ -1,4 +1,3 @@
-import { ConfigInterface } from './config';
 import { PropertiesConfig } from './properties_config';
 import { ConfigTypes } from './config_types';
 import { CLUSTER_NAMESPACE_SEPARATOR } from './constants';
@@ -7,7 +6,7 @@ import { JSONConfig } from './json_config';
 
 export class ConfigManager {
   
-  private configsMap: Map<string, ConfigInterface> = new Map();
+  private configsMap: Map<string, PropertiesConfig | JSONConfig> = new Map();
 
   private configsMapVersion = 0;
 
@@ -19,7 +18,7 @@ export class ConfigManager {
     this.options = options;
   }
 
-  public async getConfig(namespaceName: string, ip?: string): Promise<ConfigInterface> {
+  public async getConfig(namespaceName: string, ip?: string): Promise<PropertiesConfig | JSONConfig> {
     let config = this.configsMap.get(namespaceName);
     if (!config) {
       const nameSlice = namespaceName.split('.');

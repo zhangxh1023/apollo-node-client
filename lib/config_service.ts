@@ -1,6 +1,7 @@
 import { NAMESPACE_APPLICATION, CLUSTER_NAME_DEFAULT } from './constants';
 import { ConfigManager } from './config_manager';
-import { ConfigInterface } from './config';
+import { PropertiesConfig } from './properties_config';
+import { JSONConfig } from './json_config';
 
 export class ConfigService {
 
@@ -22,14 +23,14 @@ export class ConfigService {
   /**
    * getAppConfig, default namespace name: `application`
    */
-  public getAppConfig(ip? : string): Promise<ConfigInterface> {
+  public getAppConfig(ip? : string): Promise<PropertiesConfig | JSONConfig> {
     return this.getConfig(NAMESPACE_APPLICATION, ip);
   }
 
   /**
    * get Config by namespaceName
    */
-  public getConfig(namespaceName: string, ip?: string): Promise<ConfigInterface> {
+  public getConfig(namespaceName: string, ip?: string): Promise<PropertiesConfig | JSONConfig> {
     return this.configManager.getConfig(namespaceName, ip);
   }
 }
