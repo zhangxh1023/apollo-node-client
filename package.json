@@ -5,8 +5,7 @@
   "author": "zhangxh1023",
   "email": "zhangxh1023@qq.com",
   "url": "https://github.com/zhangxh1023/apollo-node-client",
-  "main": "./dist/config_service.js",
-  "types": "./index.d.ts",
+  "main": "./dist/index.js",
   "repository": {
     "type": "git",
     "url": "git@github.com:zhangxh1023/apollo-node-client.git"
