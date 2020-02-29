@@ -1,5 +1,5 @@
 # apollo-node-client
-Node.js Client for Apollo
+Node.js Client for [Apollo](https://github.com/ctripcorp/apollo)
 
 ## install
 ```bash
