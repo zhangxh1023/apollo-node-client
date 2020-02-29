@@ -54,7 +54,7 @@ it('should return the correct properties configs', () => {
 
 it('should get the correct changeEvent', async (done: jest.DoneCallback) => {
   try {
-    propertiesConfig.addChangeListener((changeEvent: ConfigChangeEvent) => {
+    propertiesConfig.addChangeListener((changeEvent: ConfigChangeEvent<string>) => {
       try {
         expect(changeEvent.getNamespace()).toBe('application');
         expect(changeEvent.changedKeys().sort()).toEqual(['a.b', 'a.b.c', 'b.a'].sort());

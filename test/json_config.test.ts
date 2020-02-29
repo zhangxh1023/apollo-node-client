@@ -60,7 +60,7 @@ it('should return the correct json configs', () => {
 
 it('should get the correct changeEvent', async (done: jest.DoneCallback) => {
   try {
-    jsonConfig.addChangeListener((changeEvent: ConfigChangeEvent) => {
+    jsonConfig.addChangeListener((changeEvent: ConfigChangeEvent<any>) => {
       try {
         expect(changeEvent.getNamespace()).toBe('application');
         expect(changeEvent.changedKeys().sort()).toEqual(['strKey', 'objKey.arrKey', 'addedKey'].sort());
