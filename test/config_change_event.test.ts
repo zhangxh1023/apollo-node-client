@@ -2,7 +2,7 @@ import { ConfigChangeEvent } from '../lib/config_change_event';
 import { ConfigChange } from '../lib/config_change';
 import { PropertyChangeType } from '../lib/property_change_types';
 
-const configChanges: Map<string, ConfigChange> = new Map();
+const configChanges: Map<string, ConfigChange<string>> = new Map();
 configChanges.set('key', new ConfigChange('application', 'key', 'oldValue', 'newValue', PropertyChangeType.MODIFIED));
 
 const changeEvent = new ConfigChangeEvent('application', configChanges);

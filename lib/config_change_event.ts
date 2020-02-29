@@ -1,9 +1,9 @@
 import { ConfigChange } from './config_change';
 
-export  class ConfigChangeEvent {
+export  class ConfigChangeEvent<T> {
   constructor(
     private readonly namespaceName: string,
-    private readonly configChanges: Map<string, ConfigChange>,
+    private readonly configChanges: Map<string, ConfigChange<T>>,
   ) {
     this.namespaceName = namespaceName;
     this.configChanges = configChanges;
@@ -17,7 +17,7 @@ export  class ConfigChangeEvent {
     return Array.from(this.configChanges.keys());
   }
 
-  public getChange(key: string): void | ConfigChange {
+  public getChange(key: string): void | ConfigChange<T> {
     return this.configChanges.get(key);
   }
 

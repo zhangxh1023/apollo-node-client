@@ -28,7 +28,7 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
     this.ip = ip;
   }
 
-  public getProperty(key: string, defaultValue?: JSONValueType): void | JSONValueType {
+  public getProperty(key: string, defaultValue?: JSONValueType): any {
     const keySlice = key.split('.');
     const value = this.getPropertyFromJSONAndKey(this.configs, keySlice);
     if (value !== undefined) {
@@ -78,7 +78,7 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
     this.releaseKey = releaseKey;
   }
 
-  public addChangeListener(fn: (changeEvent: ConfigChangeEvent) => void): JSONConfig {
+  public addChangeListener(fn: (changeEvent: ConfigChangeEvent<any>) => void): JSONConfig {
     this.addListener(CHANGE_EVENT_NAME, fn);
     return this;
   }
@@ -207,11 +207,11 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
     [key: string]: JSONValueType;
   }, changed: {
     [key: string]: JSONValueType;
-  }, newConfigs: JSONValueType, listeners: number): void | ConfigChangeEvent {
+  }, newConfigs: JSONValueType, listeners: number): void | ConfigChangeEvent<any> {
     // if changeListeners > 0, not create ConfigChange
-    let configChangeEvent: void | ConfigChangeEvent;
+    let configChangeEvent: void | ConfigChangeEvent<any>;
     if (listeners > 0) {
-      const configChanges: Map<string, ConfigChange> = new Map();
+      const configChanges: Map<string, ConfigChange<any>> = new Map();
 
       for (const key of Object.keys(added)) {
         const configChange = new ConfigChange(this.getNamespaceName(), key, undefined, added[key], PropertyChangeType.ADDED);

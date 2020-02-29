@@ -71,7 +71,7 @@ export class PropertiesConfig extends EventEmitter implements ConfigInterface {
     this.notificationId = newNotificationId;
   }
 
-  public addChangeListener(fn: (changeEvent: ConfigChangeEvent) => void): PropertiesConfig {
+  public addChangeListener(fn: (changeEvent: ConfigChangeEvent<string>) => void): PropertiesConfig {
     this.addListener(CHANGE_EVENT_NAME, fn);
     return this;
   }
@@ -173,21 +173,21 @@ export class PropertiesConfig extends EventEmitter implements ConfigInterface {
 
   private updateConfigAndCreateChangeEvent(added: string[], deleted: string[], noChanged: string[], newConfigs: {
     [key: string]: string;
-  }, changeListeners: number): void | ConfigChangeEvent {
+  }, changeListeners: number): void | ConfigChangeEvent<string> {
     // if changeListeners > 0, not create ConfigChange
-    const configChanges: Map<string, ConfigChange> = new Map();
+    const configChanges: Map<string, ConfigChange<string>> = new Map();
 
     for (const addedKey of added) {
       const newConfigValue = newConfigs[addedKey];
       if (changeListeners > 0) {
-        configChanges.set(addedKey, new ConfigChange(this.getNamespaceName(), addedKey, undefined, newConfigValue, PropertyChangeType.ADDED));
+        configChanges.set(addedKey, new ConfigChange<string>(this.getNamespaceName(), addedKey, undefined, newConfigValue, PropertyChangeType.ADDED));
       }
       this.setProperty(addedKey, newConfigValue);
     }
 
     for (const deletedKey of deleted) {
       if (changeListeners > 0) {
-        configChanges.set(deletedKey, new ConfigChange(this.getNamespaceName(), deletedKey, this.configs.get(deletedKey), undefined, PropertyChangeType.DELETED));
+        configChanges.set(deletedKey, new ConfigChange<string>(this.getNamespaceName(), deletedKey, this.configs.get(deletedKey), undefined, PropertyChangeType.DELETED));
       }
       this.deleteProperty(deletedKey);
     }
@@ -196,13 +196,13 @@ export class PropertiesConfig extends EventEmitter implements ConfigInterface {
       const newConfigsValue = newConfigs[noChangedKey];
       if (this.getProperty(noChangedKey) !== newConfigsValue) {
         if (changeListeners > 0) {
-          configChanges.set(noChangedKey, new ConfigChange(this.getNamespaceName(), noChangedKey, this.configs.get(noChangedKey), newConfigs[noChangedKey], PropertyChangeType.MODIFIED));
+          configChanges.set(noChangedKey, new ConfigChange<string>(this.getNamespaceName(), noChangedKey, this.configs.get(noChangedKey), newConfigs[noChangedKey], PropertyChangeType.MODIFIED));
         }
         this.setProperty(noChangedKey, newConfigsValue);
       }
     }
 
-    let configChangeEvent: void | ConfigChangeEvent;
+    let configChangeEvent: void | ConfigChangeEvent<string>;
 
     if (configChanges.size > 0) {
       configChangeEvent = new ConfigChangeEvent(this.getNamespaceName(), configChanges);

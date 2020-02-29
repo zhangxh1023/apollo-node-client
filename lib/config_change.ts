@@ -1,12 +1,11 @@
 import { PropertyChangeType } from './property_change_types';
-import { JSONValueType } from './types';
 
-export class ConfigChange {
+export class ConfigChange<T> {
   constructor(
     private readonly namespaceName: string,
     private readonly propertyName: string,
-    private readonly oldValue: void| string | JSONValueType,
-    private readonly newValue: void | string | JSONValueType,
+    private readonly oldValue: void | T,
+    private readonly newValue: void | T,
     private readonly changeType: PropertyChangeType,
   ) {
     this.namespaceName = namespaceName;
@@ -24,11 +23,11 @@ export class ConfigChange {
     return this.propertyName;
   }
 
-  public getOldValue(): void | string | JSONValueType {
+  public getOldValue(): void | T {
     return this.oldValue;
   }
 
-  public getNewValue(): void | string | JSONValueType {
+  public getNewValue(): void | T {
     return this.newValue;
   }
 
