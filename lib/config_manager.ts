@@ -30,14 +30,14 @@ export class ConfigManager {
           namespaceName: nameSlice.join('.'),
         }, ip);
         break;
-      case ConfigTypes.XML:
-        throw new Error('XML type is not support!');
       case ConfigTypes.JSON:
         config = new JSONConfig({
           ...this.options,
           namespaceName,
         }, ip);
         break;
+      case ConfigTypes.XML:
+        throw new Error('XML type is not support!');
       case ConfigTypes.YML:
         throw new Error('YML type is not support!');
       case ConfigTypes.YAML:
@@ -73,11 +73,6 @@ export class ConfigManager {
     }, this.configsMap);
     try {
       const { error, response, body } = await LoadNotificationsService.loadNotifications(url);
-
-
-      // console.log(`configsMapVersion: ${configsMapVersion}, error: ${error}, body: ${body}`);
-
-
       if (error) {
         throw error;
       }
