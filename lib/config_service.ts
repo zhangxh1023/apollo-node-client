@@ -23,8 +23,9 @@ export class ConfigService {
   /**
    * getAppConfig, default namespace name: `application`
    */
-  public getAppConfig(ip? : string): Promise<PropertiesConfig | JSONConfig> {
-    return this.getConfig(NAMESPACE_APPLICATION, ip);
+  public async getAppConfig(ip? : string): Promise<PropertiesConfig> {
+    const config = await this.getConfig(NAMESPACE_APPLICATION, ip);
+    return config as PropertiesConfig;
   }
 
   /**
