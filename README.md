@@ -22,25 +22,25 @@ const service = new ConfigService({
 });
 ```
 
-### 获取默认namespace的配置（application）
+### 获取默认 `namespace` 的配置（`application`）
 ```javascript
 const config = await service.getAppConfig();
 config.getAllConfig();
 ```
 
-### 获取properties格式namespace的配置
+### 获取 `properties` 格式 `namespace` 的配置
 ```javascript
 const config = await service.getConfig('application');
 config.getAllConfig();
 ```
 
-### 获取json格式namespace的配置
+### 获取 `json` 格式 `namespace` 的配置
 ```javascript
 const config = await service.getConfig('config.json');
 config.getAllConfig();
 ```
 
-### 指定灰度发布的服务ip
+### 指定灰度发布的服务 `ip`
 ```javascript
 const config = await service.getConfig('application', '192.168.3.4');
 config.getAllConfig();
