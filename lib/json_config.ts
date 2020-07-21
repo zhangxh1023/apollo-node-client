@@ -37,7 +37,7 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
     return defaultValue;
   }
 
-  private getPropertyFromJSONAndKey(JSONValue: void | JSONValueType, keySlice: string[]): void | JSONValueType {
+  private getPropertyFromJSONAndKey(JSONValue: undefined | JSONValueType, keySlice: string[]): undefined | JSONValueType {
     if (keySlice.length === 0) {
       return JSONValue;
     }
@@ -83,7 +83,7 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
     return this;
   }
 
-  public getIp(): void | string {
+  public getIp(): undefined | string {
     return this.ip;
   }
 
@@ -126,7 +126,7 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
       }
       // ignore no updates
     } catch (error) {
-      // ignore
+      console.log('[apollo-node-client] %s - load json configs - %s', new Date(), error);
     }
   }
 

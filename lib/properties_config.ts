@@ -27,7 +27,7 @@ export class PropertiesConfig extends EventEmitter implements ConfigInterface {
     this.ip = ip;
   }
 
-  public getProperty(key: string, defaultValue?: string): void | string {
+  public getProperty(key: string, defaultValue?: string): undefined | string {
     const value = this.configs.get(key);
     if (value || value === '') {
       return value;
@@ -51,7 +51,7 @@ export class PropertiesConfig extends EventEmitter implements ConfigInterface {
     return this.options.namespaceName;
   }
 
-  public getIp(): void | string {
+  public getIp(): undefined | string {
     return this.ip;
   }
 
@@ -114,7 +114,7 @@ export class PropertiesConfig extends EventEmitter implements ConfigInterface {
       }
       // ignore no updates
     } catch (error) {
-      // ignore error
+      console.log('[apollo-node-client] %s - load properties configs - %s', new Date(), error);
     }
   }
 
@@ -173,7 +173,7 @@ export class PropertiesConfig extends EventEmitter implements ConfigInterface {
 
   private updateConfigAndCreateChangeEvent(added: string[], deleted: string[], noChanged: string[], newConfigs: {
     [key: string]: string;
-  }, changeListeners: number): void | ConfigChangeEvent<string> {
+  }, changeListeners: number): undefined | ConfigChangeEvent<string> {
     // if changeListeners > 0, not create ConfigChange
     const configChanges: Map<string, ConfigChange<string>> = new Map();
 
@@ -202,7 +202,7 @@ export class PropertiesConfig extends EventEmitter implements ConfigInterface {
       }
     }
 
-    let configChangeEvent: void | ConfigChangeEvent<string>;
+    let configChangeEvent: undefined | ConfigChangeEvent<string>;
 
     if (configChanges.size > 0) {
       configChangeEvent = new ConfigChangeEvent(this.getNamespaceName(), configChanges);

@@ -8,7 +8,7 @@ import { PropertyChangeType } from '../lib/property_change_types';
 jest.mock('../lib/request');
 const mockRequest = Request as jest.Mocked<typeof Request>;
 const mockResponse = (configs: JSONValueType): {
-  error: void | Error;
+  error: undefined | Error;
   response: request.Response;
   body: unknown;
 } => {
@@ -28,7 +28,7 @@ const mockResponse = (configs: JSONValueType): {
   };
 };
 const mockErrorResponse = {
-  error: new Error('test error'),
+  error: new Error('Mock network 500 error.'),
   response: { statusCode: 500 } as request.Response,
   body: '',
 };

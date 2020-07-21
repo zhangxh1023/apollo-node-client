@@ -7,7 +7,7 @@ jest.mock('../lib/request');
 const mockRequest = Request as jest.Mocked<typeof Request>;
 
 const mockFn = (url: string): Promise<{
-  error: void | Error;
+  error: undefined | Error;
   response: request.Response;
   body: unknown;
 }> => {
@@ -54,17 +54,20 @@ const mockFn = (url: string): Promise<{
   });
 };
 
+let mockErrorFnCounter = 0;
 const mockErrorFn = (): Promise<{
-  error: void | Error;
+  error: undefined | Error;
   response: request.Response;
   body: unknown;
 }> => {
   return new Promise(resolve => {
-    return resolve({
-      error: new Error('test Error'),
-      response: { statusCode: 500 } as request.Response,
-      body: '',
-    });
+    setTimeout(() => {
+      return resolve({
+        error: new Error('Mock network 500 error.'),
+        response: { statusCode: 500 } as request.Response,
+        body: '',
+      });
+    }, mockErrorFnCounter++ == 0 ? 0 : 60000);
   });
 };
 
@@ -88,7 +91,7 @@ it('should throw Error with not support', () => {
 });
 
 it('should return a properties config', async () => {
-  mockRequest.get.mockImplementationOnce(mockFn);
+  mockRequest.get.mockImplementation(mockFn);
   const config1 = await configManager.getConfig('test');
   const config2 = await configManager.getConfig('test.properties');
   expect(config1.getNamespaceName()).toBe('test');
@@ -96,12 +99,12 @@ it('should return a properties config', async () => {
 });
 
 it('should return a json config', async () => {
-  mockRequest.get.mockImplementationOnce(mockFn);
+  mockRequest.get.mockImplementation(mockFn);
   const config = await configManager.getConfig('test.json');
   expect(config.getNamespaceName()).toBe('test.json');
 });
 
 it('should ignore the request error', async() => {
-  mockRequest.get.mockImplementationOnce(mockErrorFn);
+  mockRequest.get.mockImplementation(mockErrorFn);
   await configManager.getConfig('errorConfig');
 });

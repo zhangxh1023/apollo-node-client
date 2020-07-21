@@ -92,7 +92,7 @@ export class ConfigManager {
       }
       // ignore no update
     } catch (error) {
-      // ignore error
+      console.log('[apollo-node-client] %s - load notifications - %s', new Date(), error);
     }
 
 

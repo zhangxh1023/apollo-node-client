@@ -2,7 +2,7 @@ import * as request from 'request';
 
 export class Request {
   public static get(url: string, options?: request.CoreOptions): Promise<{
-    error: void | Error;
+    error: undefined | Error;
     response: request.Response;
     body: unknown;
   }> {

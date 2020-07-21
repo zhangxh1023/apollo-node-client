@@ -17,7 +17,7 @@ export  class ConfigChangeEvent<T> {
     return Array.from(this.configChanges.keys());
   }
 
-  public getChange(key: string): void | ConfigChange<T> {
+  public getChange(key: string): undefined | ConfigChange<T> {
     return this.configChanges.get(key);
   }
 

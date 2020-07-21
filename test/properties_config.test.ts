@@ -9,7 +9,7 @@ const mockRequest = Request as jest.Mocked<typeof Request>;
 const mockResponse = (configurations: {
   [key: string]: unknown;
 }): {
-  error: void | Error;
+  error: undefined | Error;
   response: request.Response;
   body: unknown;
 } => {
@@ -32,7 +32,7 @@ const initResponse = {
 };
 const mockInitResponse = mockResponse(initResponse);
 const mockErrorResponse = {
-  error: new Error('test error'),
+  error: new Error('Mock network 500 error.'),
   response: { statusCode: 500 } as request.Response,
   body: '',
 };

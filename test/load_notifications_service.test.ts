@@ -28,12 +28,25 @@ const url = LoadNotificationsService.formatLongPollUrl(options, configsMap);
 
 const encodedUrl = new URL(url);
 
+/**
+ * difference configServerUrl
+ */
+const anotherOptions = {
+  configServerUrl: 'http://localhost:8080',
+  appId: 'SampleApp',
+  clusterName: 'default',
+};
+const anotherUrl = LoadNotificationsService.formatLongPollUrl(anotherOptions, configsMap);
+const anotherEncodeUrl = new URL(anotherUrl);
+
 it('should return the correct origin', () => {
   expect(encodedUrl.origin).toBe('http://localhost:8080');
+  expect(anotherEncodeUrl.origin).toBe('http://localhost:8080');
 });
 
 it('should return the correct pathname', () => {
   expect(encodedUrl.pathname).toBe('/notifications/v2');
+  expect(anotherEncodeUrl.pathname).toBe('/notifications/v2');
 });
 
 it('should return the correct query params', () => {

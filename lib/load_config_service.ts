@@ -30,7 +30,7 @@ export class LoadConfigService {
   }
 
   public static loadConfig(url: string, options?: request.CoreOptions): Promise<{
-    error: void | Error;
+    error: undefined | Error;
     response: request.Response;
     body: unknown;
   }> {

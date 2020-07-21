@@ -32,7 +32,7 @@ export class LoadNotificationsService {
   }
 
   public static loadNotifications(url: string, options?: request.CoreOptions): Promise<{
-    error: void | Error;
+    error: undefined | Error;
     response: request.Response;
     body: unknown;
   }> {

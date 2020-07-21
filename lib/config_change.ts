@@ -4,8 +4,8 @@ export class ConfigChange<T> {
   constructor(
     private readonly namespaceName: string,
     private readonly propertyName: string,
-    private readonly oldValue: void | T,
-    private readonly newValue: void | T,
+    private readonly oldValue: undefined | T,
+    private readonly newValue: undefined | T,
     private readonly changeType: PropertyChangeType,
   ) {
     this.namespaceName = namespaceName;
@@ -23,11 +23,11 @@ export class ConfigChange<T> {
     return this.propertyName;
   }
 
-  public getOldValue(): void | T {
+  public getOldValue(): undefined | T {
     return this.oldValue;
   }
 
-  public getNewValue(): void | T {
+  public getNewValue(): undefined | T {
     return this.newValue;
   }
 
