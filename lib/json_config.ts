@@ -207,9 +207,9 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
     [key: string]: JSONValueType;
   }, changed: {
     [key: string]: JSONValueType;
-  }, newConfigs: JSONValueType, listeners: number): void | ConfigChangeEvent<any> {
+  }, newConfigs: JSONValueType, listeners: number): undefined | ConfigChangeEvent<any> {
     // if changeListeners > 0, not create ConfigChange
-    let configChangeEvent: void | ConfigChangeEvent<any>;
+    let configChangeEvent: undefined | ConfigChangeEvent<any>;
     if (listeners > 0) {
       const configChanges: Map<string, ConfigChange<any>> = new Map();
 
