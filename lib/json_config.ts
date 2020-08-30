@@ -28,16 +28,20 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
     this.ip = ip;
   }
 
-  public getProperty(key: string, defaultValue?: JSONValueType): any {
+  public getProperty(key: string, defaultValue?: JSONValueType): undefined | JSONValueType {
+    return this.getPropertyByJSONAndKey(this.configs, key, defaultValue);
+  }
+
+  private getPropertyByJSONAndKey(configs: JSONValueType, key: string, defaultValue?: JSONValueType): undefined | JSONValueType {
     const keySlice = key.split('.');
-    const value = this.getPropertyFromJSONAndKey(this.configs, keySlice);
+    const value = this.getPropertyByJSONAndKeySlice(configs, keySlice);
     if (value !== undefined) {
       return value;
     }
     return defaultValue;
   }
 
-  private getPropertyFromJSONAndKey(JSONValue: undefined | JSONValueType, keySlice: string[]): undefined | JSONValueType {
+  private getPropertyByJSONAndKeySlice(JSONValue: undefined | JSONValueType, keySlice: string[]): undefined | JSONValueType {
     if (keySlice.length === 0) {
       return JSONValue;
     }
@@ -51,7 +55,7 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
     if (!key) {
       return;
     }
-    return this.getPropertyFromJSONAndKey(JSONValue[key], keySlice);
+    return this.getPropertyByJSONAndKeySlice(JSONValue[key], keySlice);
   }
 
   public getNamespaceName(): string {
@@ -131,19 +135,13 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
   }
 
   private diffJSON(oldJSONValue: JSONValueType, newJSONValue: JSONValueType, prefix = ''): {
-    added: {
-      [key: string]: JSONValueType;
-    };
-    deleted: {
-      [key: string]: JSONValueType;
-    };
-    changed: {
-      [key: string]: JSONValueType;
-    };
+    added: string[];
+    deleted: string[];
+    changed: string[];
   } {
-    const added = Object.create(null);
-    const deleted = Object.create(null);
-    const changed = Object.create(null);
+    const added: string[] = [];
+    const deleted: string[] = [];
+    const changed: string[] = [];
 
     if (typeof oldJSONValue === 'string' ||
     typeof newJSONValue === 'string' ||
@@ -154,7 +152,7 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
     oldJSONValue === null ||
     newJSONValue === null) {
       if (oldJSONValue !== newJSONValue) {
-        changed[prefix] = newJSONValue;
+        changed.push(prefix);
       }
       return {
         added,
@@ -165,7 +163,7 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
 
     if (Array.isArray(oldJSONValue) || Array.isArray(newJSONValue)) {
       if (JSON.stringify(oldJSONValue) !== JSON.stringify(newJSONValue)) {
-        changed[prefix] = newJSONValue;
+        changed.push(prefix);
       }
       return {
         added,
@@ -177,20 +175,20 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
     for (const key of Object.keys(oldJSONValue)) {
       if (!Object.prototype.hasOwnProperty.call(newJSONValue, key)) {
         const newKey = prefix ? prefix + '.' + key : key;
-        deleted[newKey] = undefined;
+        deleted.push(newKey);
       }
     }
 
     for (const key of Object.keys(newJSONValue)) {
       const newKey = prefix ? prefix + '.' + key : key;
       if (!Object.prototype.hasOwnProperty.call(oldJSONValue, key)) {
-        added[newKey] = newJSONValue[key];
+        added.push(newKey);
       } else {
         // merge returned value
         const { added: _added, deleted: _deleted, changed: _changed } = this.diffJSON(oldJSONValue[key], newJSONValue[key], newKey);
-        Object.assign(added, _added);
-        Object.assign(deleted, _deleted);
-        Object.assign(changed, _changed);
+        added.push(..._added);
+        deleted.push(..._deleted);
+        changed.push(..._changed);
       }
     }
 
@@ -201,38 +199,27 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
     };
   }
 
-  private updateConfigAndCreateChangeEvent(added: {
-    [key: string]: JSONValueType;
-  }, deleted: {
-    [key: string]: JSONValueType;
-  }, changed: {
-    [key: string]: JSONValueType;
-  }, newConfigs: JSONValueType, listeners: number): undefined | ConfigChangeEvent<any> {
+  private updateConfigAndCreateChangeEvent(added: string[], deleted: string[], changed: string[], newConfigs: JSONValueType, listeners: number): undefined | ConfigChangeEvent<any> {
     // if changeListeners > 0, not create ConfigChange
     let configChangeEvent: undefined | ConfigChangeEvent<any>;
     if (listeners > 0) {
       const configChanges: Map<string, ConfigChange<any>> = new Map();
-
-      for (const key of Object.keys(added)) {
-        const configChange = new ConfigChange(this.getNamespaceName(), key, undefined, added[key], PropertyChangeType.ADDED);
+      for (const key of added) {
+        const configChange = new ConfigChange(this.getNamespaceName(), key, undefined, this.getPropertyByJSONAndKey(newConfigs, key), PropertyChangeType.ADDED);
         configChanges.set(key, configChange);
       }
-
-      for (const key of Object.keys(deleted)) {
+      for (const key of deleted) {
         const configChange = new ConfigChange(this.getNamespaceName(), key, this.getProperty(key), undefined, PropertyChangeType.DELETED);
         configChanges.set(key, configChange);
       }
-
-      for (const key of Object.keys(changed)) {
-        const configChange = new ConfigChange(this.getNamespaceName(), key, this.getProperty(key), changed[key], PropertyChangeType.MODIFIED);
+      for (const key of changed) {
+        const configChange = new ConfigChange(this.getNamespaceName(), key, this.getProperty(key), this.getPropertyByJSONAndKey(newConfigs, key), PropertyChangeType.MODIFIED);
         configChanges.set(key, configChange);
       }
-
       if (configChanges.size > 0) {
         configChangeEvent = new ConfigChangeEvent(this.getNamespaceName(), configChanges);
       }
     }
-
     this.configs = newConfigs;
     return configChangeEvent;
   }

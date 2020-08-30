@@ -99,13 +99,10 @@ export class PropertiesConfig extends EventEmitter implements ConfigInterface {
           releaseKey: string;
         } = JSON.parse(body);
         // diff change
-        const oldConfigKeys = Array.from(this.configs.keys());
-        const newConfigKeys = Object.keys(loadConfigResponse.configurations);
-        const { added, deleted, noChanged } = this.diffArray(oldConfigKeys, newConfigKeys);
-
+        const { added, deleted, changed } = this.diffMap(this.configs, loadConfigResponse.configurations);
         const changeListeners = this.listenerCount(CHANGE_EVENT_NAME);
         // update change and emit changeEvent
-        const configChangeEvent = this.updateConfigAndCreateChangeEvent(added, deleted, noChanged, loadConfigResponse.configurations, changeListeners);
+        const configChangeEvent = this.updateConfigAndCreateChangeEvent(added, deleted, changed, loadConfigResponse.configurations, changeListeners);
         if (configChangeEvent) {
           this.emit(CHANGE_EVENT_NAME, configChangeEvent);
         }
@@ -118,60 +115,36 @@ export class PropertiesConfig extends EventEmitter implements ConfigInterface {
     }
   }
 
-  private diffArray(oldConfigKeys: string[], newConfigKeys: string[]): {
+  private diffMap(oldConfigs: Map<string, string>, newConfigs: { [key: string]: string }): {
     added: string[];
     deleted: string[];
-    noChanged: string[];
+    changed: string[];
   } {
     const added: string[] = [];
     const deleted: string[] = [];
-    const noChanged: string[] = [];
-
-    const compareFn = (a: string, b: string): number => {
-      return a > b ? 1 : -1;
-    };
-
-    oldConfigKeys.sort(compareFn);
-    newConfigKeys.sort(compareFn);
-
-    const oldConfigKeysLength = oldConfigKeys.length;
-    const newConfigKeysLength = newConfigKeys.length;
-    let oldConfigKeysIndex = 0;
-    let newConfigKeysIndex = 0;
-
-    while (oldConfigKeysIndex < oldConfigKeysLength &&  newConfigKeysIndex < newConfigKeysLength) {
-      const oldConfigKey = oldConfigKeys[oldConfigKeysIndex];
-      const newConfigKey = newConfigKeys[newConfigKeysIndex];
-      if (oldConfigKey === newConfigKey) {
-        noChanged.push(oldConfigKey);
-        oldConfigKeysIndex++;
-        newConfigKeysIndex++;
-        continue;
-      } else if(oldConfigKey < newConfigKey) {
-        deleted.push(oldConfigKey);
-        oldConfigKeysIndex++;
+    const changed: string[] = [];
+    for (const key in newConfigs) {
+      if (oldConfigs.has(key)) {
+        if (oldConfigs.get(key) !== newConfigs[key]) {
+          changed.push(key);
+        }
       } else {
-        added.push(newConfigKey);
-        newConfigKeysIndex++;
+        added.push(key);
       }
     }
-
-    for (let i = oldConfigKeysIndex; i < oldConfigKeysLength; i++) {
-      deleted.push(oldConfigKeys[i]);
+    for (const key of oldConfigs.keys()) {
+      if (!Object.prototype.hasOwnProperty.call(newConfigs, key)) {
+        deleted.push(key);
+      }
     }
-
-    for (let i = newConfigKeysIndex; i < newConfigKeysLength; i++) {
-      added.push(newConfigKeys[i]);
-    }
-
     return {
       added,
       deleted,
-      noChanged,
+      changed,
     };
   }
 
-  private updateConfigAndCreateChangeEvent(added: string[], deleted: string[], noChanged: string[], newConfigs: {
+  private updateConfigAndCreateChangeEvent(added: string[], deleted: string[], changed: string[], newConfigs: {
     [key: string]: string;
   }, changeListeners: number): undefined | ConfigChangeEvent<string> {
     // if changeListeners > 0, not create ConfigChange
@@ -192,14 +165,12 @@ export class PropertiesConfig extends EventEmitter implements ConfigInterface {
       this.deleteProperty(deletedKey);
     }
 
-    for (const noChangedKey of noChanged) {
-      const newConfigsValue = newConfigs[noChangedKey];
-      if (this.getProperty(noChangedKey) !== newConfigsValue) {
-        if (changeListeners > 0) {
-          configChanges.set(noChangedKey, new ConfigChange<string>(this.getNamespaceName(), noChangedKey, this.configs.get(noChangedKey), newConfigs[noChangedKey], PropertyChangeType.MODIFIED));
-        }
-        this.setProperty(noChangedKey, newConfigsValue);
+    for (const changedKey of changed) {
+      const newConfigsValue = newConfigs[changedKey];
+      if (changeListeners > 0) {
+        configChanges.set(changedKey, new ConfigChange<string>(this.getNamespaceName(), changedKey, this.configs.get(changedKey), newConfigs[changedKey], PropertyChangeType.MODIFIED));
       }
+      this.setProperty(changedKey, newConfigsValue);
     }
 
     let configChangeEvent: undefined | ConfigChangeEvent<string>;
