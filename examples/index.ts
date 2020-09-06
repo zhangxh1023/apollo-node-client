@@ -4,6 +4,7 @@ import { ConfigChangeEvent } from '..';
 const service = new ConfigService({
   configServerUrl: 'http://localhost:8080/',
   appId: 'SampleApp',
+  clusterName: 'default',
 });
 
 async function main(): Promise<void> {

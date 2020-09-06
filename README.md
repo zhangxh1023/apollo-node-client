@@ -19,6 +19,7 @@ const { ConfigService } = require('apollo-node-client');
 const service = new ConfigService({
   configServerUrl: 'http://localhost:8080/',
   appId: 'SampleApp',
+  clusterName: 'default',
 });
 ```
 
@@ -53,10 +54,10 @@ config.addChangeListener((changeEvent) => {
     const change = changeEvent.getChange(key);
     if (change) {
       console.log(`namespace: ${change.getNamespace()},
-      changeType: ${change.getChangeType()},
-      propertyName: ${change.getPropertyName()},
-      oldValue: ${change.getOldValue()},
-      newValue: ${change.getNewValue()}`);
+        changeType: ${change.getChangeType()},
+        propertyName: ${change.getPropertyName()},
+        oldValue: ${change.getOldValue()},
+        newValue: ${change.getNewValue()}`);
     }
   }
 });
