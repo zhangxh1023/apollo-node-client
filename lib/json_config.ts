@@ -82,7 +82,7 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
     this.releaseKey = releaseKey;
   }
 
-  public addChangeListener(fn: (changeEvent: ConfigChangeEvent<any>) => void): JSONConfig {
+  public addChangeListener(fn: (changeEvent: ConfigChangeEvent<JSONValueType>) => void): JSONConfig {
     this.addListener(CHANGE_EVENT_NAME, fn);
     return this;
   }
