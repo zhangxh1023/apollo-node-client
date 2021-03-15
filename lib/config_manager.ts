@@ -1,6 +1,6 @@
 import { PropertiesConfig } from './properties_config';
 import { ConfigTypes } from './config_types';
-import { CLUSTER_NAMESPACE_SEPARATOR } from './constants';
+import { CLUSTER_NAMESPACE_SEPARATOR, LONG_POLL_FAILED_SLEEP_TIME } from './constants';
 import { LoadNotificationsService } from './load_notifications_service';
 import { JSONConfig } from './json_config';
 
@@ -92,13 +92,19 @@ export class ConfigManager {
       }
       // ignore no update
     } catch (error) {
-      console.log('[apollo-node-client] %s - load notifications - %s', new Date(), error);
+      console.log('[apollo-node-client] %s - load notifications failed, will retry in %s seconds. - %s',
+        new Date(), LONG_POLL_FAILED_SLEEP_TIME / 1000, error);
+      await this.sleep(LONG_POLL_FAILED_SLEEP_TIME);
     }
 
 
     setImmediate(() => {
       this.longPoll(configsMapVersion);
     });
+  }
+
+  private sleep(time = 2000): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, time));
   }
 
 }

@@ -7,3 +7,4 @@ export const CONFIG_FILE_CONTENT_KEY = 'content';
 export const NO_APPID_PLACEHOLDER = 'ApolloNoAppIdPlaceHolder';
 export const NOTIFICATION_ID_PLACEHOLDER = -1;
 export const CHANGE_EVENT_NAME = 'change';
+export const LONG_POLL_FAILED_SLEEP_TIME = 2000;
