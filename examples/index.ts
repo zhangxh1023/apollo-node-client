@@ -39,6 +39,8 @@ async function main(): Promise<void> {
 
   console.log(appConfig.getAllConfig());
   console.log(jsonConfig.getAllConfig());
+  console.log(appConfig.getProperty('mysql.user'));
+  console.log(jsonConfig.getProperty('mysql.user'));
 }
 
 main();

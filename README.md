@@ -26,25 +26,29 @@ const service = new ConfigService({
 ### 获取默认 `namespace` 的配置（`application`）
 ```javascript
 const config = await service.getAppConfig();
-config.getAllConfig();
+config.getAllConfig();    // Map(1) { 'mysql.user' => 'root' }
+console.log(config.getProperty('mysql.user'));    // root
 ```
 
 ### 获取 `properties` 格式 `namespace` 的配置
 ```javascript
 const config = await service.getConfig('application');
-config.getAllConfig();
+config.getAllConfig();    // Map(1) { 'mysql.user' => 'root' }
+console.log(config.getProperty('mysql.user'));    // root
 ```
 
 ### 获取 `json` 格式 `namespace` 的配置
 ```javascript
 const config = await service.getConfig('config.json');
-config.getAllConfig();
+config.getAllConfig();    // { mysql: { user: 'root' } }
+console.log(config.getProperty('mysql.user'));    // root
 ```
 
 ### 指定灰度发布的服务 `ip`
 ```javascript
 const config = await service.getConfig('application', '192.168.3.4');
-config.getAllConfig();
+config.getAllConfig();    // Map(1) { 'mysql.user' => 'root' }
+console.log(config.getProperty('mysql.user'));    // root
 ```
 
 ### 监听配置变化事件
