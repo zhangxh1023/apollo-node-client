@@ -147,7 +147,7 @@ export class PropertiesConfig extends EventEmitter implements ConfigInterface {
   private updateConfigAndCreateChangeEvent(added: string[], deleted: string[], changed: string[], newConfigs: {
     [key: string]: string;
   }, changeListeners: number): undefined | ConfigChangeEvent<string> {
-    // if changeListeners > 0, not create ConfigChange
+    // if changeListeners === 0, not create ConfigChange
     const configChanges: Map<string, ConfigChange<string>> = new Map();
 
     for (const addedKey of added) {
