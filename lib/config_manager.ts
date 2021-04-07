@@ -3,6 +3,7 @@ import { ConfigTypes } from './config_types';
 import { CLUSTER_NAMESPACE_SEPARATOR, LONG_POLL_FAILED_SLEEP_TIME } from './constants';
 import { LoadNotificationsService } from './load_notifications_service';
 import { JSONConfig } from './json_config';
+import { Access } from './access';
 
 export class ConfigManager {
   
@@ -10,10 +11,13 @@ export class ConfigManager {
 
   private configsMapVersion = 0;
 
+  private readonly REQUEST_TIME_OUT = 70000;
+
   constructor(private readonly options: {
     configServerUrl: string;
     appId: string;
     clusterName: string;
+    secret?: string;
   }) {
     this.options = options;
   }
@@ -72,7 +76,17 @@ export class ConfigManager {
       ...this.options,
     }, this.configsMap);
     try {
-      const { error, response, body } = await LoadNotificationsService.loadNotifications(url);
+      let headers: undefined | {
+        Authorization: string;
+        Timestamp: number;
+      };
+      if (this.options.secret) {
+        headers = Access.createAccessHeader(this.options.appId, url, this.options.secret);
+      }
+      const { error, response, body } = await LoadNotificationsService.loadNotifications(url, {
+        timeout: this.REQUEST_TIME_OUT,
+        headers,
+      });
       if (error) {
         throw error;
       }

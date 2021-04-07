@@ -11,6 +11,7 @@ export class ConfigService {
     configServerUrl: string;
     appId: string;
     clusterName?: string;
+    secret?: string;
   }) {
     this.options = options;
     this.options.clusterName = this.options.clusterName ? this.options.clusterName : CLUSTER_NAME_DEFAULT;

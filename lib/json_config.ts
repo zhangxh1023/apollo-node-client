@@ -6,6 +6,7 @@ import { ConfigChangeEvent } from './config_change_event';
 import { ConfigChange } from './config_change';
 import { PropertyChangeType } from './property_change_types';
 import { EventEmitter } from 'events';
+import { Access } from './access';
 
 export class JSONConfig extends EventEmitter implements ConfigInterface {
 
@@ -15,13 +16,12 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
 
   private configs: JSONValueType = Object.create(null);
 
-  private readonly REQUEST_TIME_OUT = 70000;
-
   constructor(private readonly options: {
     configServerUrl: string;
     appId: string;
     clusterName: string;
     namespaceName: string;
+    secret?: string;
   }, private readonly ip?: string) {
     super();
     this.options = options;
@@ -97,7 +97,14 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
       ip: this.getIp(),
     }));
     try {
-      const { error, response, body } = await LoadConfigService.loadConfig(url, { timeout: this.REQUEST_TIME_OUT });
+      let headers: undefined | {
+        Authorization: string;
+        Timestamp: number;
+      };
+      if (this.options.secret) {
+        headers = Access.createAccessHeader(this.options.appId, url, this.options.secret);
+      }
+      const { error, response, body } = await LoadConfigService.loadConfig(url, { headers });
       if (error) {
         throw error;
       }
