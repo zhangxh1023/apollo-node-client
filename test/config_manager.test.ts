@@ -2,6 +2,7 @@ import { ConfigManager } from '../lib/config_manager';
 import { Request } from '../lib/request';
 import * as request from 'request';
 import { URL } from 'url';
+import { LONG_POLL_FAILED_SLEEP_TIME } from '../lib/constants';
 
 jest.mock('../lib/request');
 const mockRequest = Request as jest.Mocked<typeof Request>;
@@ -67,7 +68,7 @@ const mockErrorFn = (): Promise<{
         response: { statusCode: 500 } as request.Response,
         body: '',
       });
-    }, mockErrorFnCounter++ == 0 ? 0 : 60000);
+    }, mockErrorFnCounter++ <= 1 ? 0 : 60000);
   });
 };
 
@@ -79,7 +80,7 @@ const configManager = new ConfigManager({
 
 afterAll(() => {
   return new Promise(resolve => {
-    setTimeout(resolve, 1000);
+    setTimeout(resolve, LONG_POLL_FAILED_SLEEP_TIME + 500);
   });
 });
 

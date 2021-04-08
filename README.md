@@ -20,6 +20,7 @@ const service = new ConfigService({
   configServerUrl: 'http://localhost:8080/',
   appId: 'SampleApp',
   clusterName: 'default',
+  secret: 'cf86d564d10a46d4a5989dfdeed3a3a2'
 });
 ```
 

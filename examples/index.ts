@@ -11,6 +11,7 @@ const service = new ConfigService({
 async function main(): Promise<void> {
   const appConfig = await service.getAppConfig();
   const jsonConfig = await service.getConfig('first.json');
+  // const [appConfig, jsonConfig] = await Promise.all([service.getAppConfig(), service.getConfig('first.json')]);
 
   appConfig.addChangeListener((changeEvent: ConfigChangeEvent<string>) => {
     for (const key of changeEvent.changedKeys()) {
@@ -39,8 +40,8 @@ async function main(): Promise<void> {
   });
 
   console.log(appConfig.getAllConfig());
-  console.log(jsonConfig.getAllConfig());
   console.log(appConfig.getProperty('mysql.user'));
+  console.log(jsonConfig.getAllConfig());
   console.log(jsonConfig.getProperty('mysql.user'));
 }
 

@@ -6,7 +6,7 @@ import { JSONConfig } from './json_config';
 import { Access } from './access';
 
 export class ConfigManager {
-  
+
   private configsMap: Map<string, PropertiesConfig | JSONConfig> = new Map();
 
   private configsMapVersion = 0;
@@ -57,64 +57,81 @@ export class ConfigManager {
       }
 
       this.configsMapVersion = this.configsMapVersion % Number.MAX_SAFE_INTEGER + 1;
+      const configsMapVersion = this.configsMapVersion;
       const key = this.formatConfigsMapKey(config.getNamespaceName());
       this.configsMap.set(key, config);
-      await this.longPoll(this.configsMapVersion);
+      const singleMap = new Map();
+      singleMap.set(key, config);
+      try {
+        await this.updateConfigs(singleMap);
+      } catch (error) {
+        console.log('[apollo-node-client] %s - load notifications failed. - %s', new Date(), error);
+      }
+      setImmediate(async () => {
+        await this.startLongPoll(configsMapVersion);
+      });
     }
     return config;
   }
 
-  private formatConfigsMapKey(namespaceName: string): string {
-    return this.options.clusterName + CLUSTER_NAMESPACE_SEPARATOR + namespaceName;
+  private async updateConfigs(configsMap: Map<string, PropertiesConfig | JSONConfig>): Promise<void> {
+    const url = LoadNotificationsService.formatLongPollUrl({
+      ...this.options,
+    }, configsMap);
+    let headers: undefined | {
+      timeout: number;
+      Authorization?: string;
+      Timestamp?: number;
+    } = {
+      timeout: this.REQUEST_TIME_OUT,
+    };
+    if (this.options.secret) {
+      headers = {
+        ...headers,
+        ...Access.createAccessHeader(this.options.appId, url, this.options.secret),
+      };
+    }
+    const { error, response, body } = await LoadNotificationsService.loadNotifications(url, { headers });
+    console.log(body);
+    if (error) {
+      throw error;
+    }
+    if (response && response.statusCode === 200 && typeof body === 'string' && body) {
+      const notificationsResponse: {
+        namespaceName: string;
+        notificationId: number;
+      }[] = JSON.parse(body);
+      for (const item of notificationsResponse) {
+        const key = this.formatConfigsMapKey(item.namespaceName);
+        const config = this.configsMap.get(key);
+        if (config) {
+          await config.loadAndUpdateConfig();
+          config.setNotificationId(item.notificationId);
+        }
+      }
+    }
+    // ignore no update
   }
 
-  private async longPoll(configsMapVersion: number): Promise<void> {
+  private async startLongPoll(configsMapVersion: number): Promise<void> {
     if (configsMapVersion !== this.configsMapVersion) {
       return;
     }
-    const url = LoadNotificationsService.formatLongPollUrl({
-      ...this.options,
-    }, this.configsMap);
     try {
-      let headers: undefined | {
-        Authorization: string;
-        Timestamp: number;
-      };
-      if (this.options.secret) {
-        headers = Access.createAccessHeader(this.options.appId, url, this.options.secret);
-      }
-      const { error, response, body } = await LoadNotificationsService.loadNotifications(url, {
-        timeout: this.REQUEST_TIME_OUT,
-        headers,
-      });
-      if (error) {
-        throw error;
-      }
-      if (response && response.statusCode === 200 && typeof body === 'string' && body) {
-        const notificationsResponse: {
-          namespaceName: string;
-          notificationId: number;
-        }[] = JSON.parse(body);
-        for (const item of notificationsResponse) {
-          const key = this.formatConfigsMapKey(item.namespaceName);
-          const config = this.configsMap.get(key);
-          if (config) {
-            await config.loadAndUpdateConfig();
-            config.setNotificationId(item.notificationId);
-          }
-        }
-      }
-      // ignore no update
+      await this.updateConfigs(this.configsMap);
     } catch (error) {
       console.log('[apollo-node-client] %s - load notifications failed, will retry in %s seconds. - %s',
         new Date(), LONG_POLL_FAILED_SLEEP_TIME / 1000, error);
       await this.sleep(LONG_POLL_FAILED_SLEEP_TIME);
     }
 
-
-    setImmediate(() => {
-      this.longPoll(configsMapVersion);
+    setImmediate(async () => {
+      await this.startLongPoll(configsMapVersion);
     });
+  }
+
+  private formatConfigsMapKey(namespaceName: string): string {
+    return this.options.clusterName + CLUSTER_NAMESPACE_SEPARATOR + namespaceName;
   }
 
   private sleep(time = 2000): Promise<void> {
