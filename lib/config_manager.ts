@@ -92,7 +92,6 @@ export class ConfigManager {
       };
     }
     const { error, response, body } = await LoadNotificationsService.loadNotifications(url, { headers });
-    console.log(body);
     if (error) {
       throw error;
     }
