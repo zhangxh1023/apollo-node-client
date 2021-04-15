@@ -88,7 +88,7 @@ config.addChangeListener((changeEvent) => {
 ---
 
 - configService.getAppConfig( [ ip ] )
-  - `ip` _\<string>_ 应用部署的机器ip
+  - `[ip]` _\<string>_ 应用部署的机器ip
 
   - Returns: _Promise\<PropertiesConfig>_ 默认的 `namespace` 为 `application`
 
@@ -99,6 +99,8 @@ config.addChangeListener((changeEvent) => {
   - `[ip]` _\<string>_ 应用部署的机器ip
 
   - Returns: _Promise\<PropertiesConfig | JSONConfig>_
+
+---
 
 ### Class: PropertiesConfig
 
@@ -121,6 +123,8 @@ config.addChangeListener((changeEvent) => {
 
   - Returns: _void_
 
+---
+
 ### Class: JSONConfig
 
 - jsonConfig.getAllConfig()
@@ -142,6 +146,8 @@ config.addChangeListener((changeEvent) => {
 
   - Returns: _void_
 
+---
+
 ### Class: ConfigChangeEvent
 
 - configChangeEvent.getNamespace()
@@ -159,6 +165,8 @@ config.addChangeListener((changeEvent) => {
 - configChangeEvent.getChange()
 
   - Returns: _undefined | ConfigChange\<T>_
+
+---
 
 ### Class: ConfigChange\<T>
 
@@ -189,6 +197,8 @@ config.addChangeListener((changeEvent) => {
 - configChange.getChangeType()
 
   - Returns: _PropertyChangeType_
+
+---
 
 ### Enum: PropertyChangeType
 
