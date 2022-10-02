@@ -45,7 +45,6 @@ export class ConfigManager {
 
   public async getConfig(namespaceName: string, ip?: string): Promise<PropertiesConfig | JSONConfig> {
     const type = this.getTypeByNamespaceName(namespaceName);
-    console.log(type);
     if (!type.namespaceName) {
       throw new Error('namespaceName can not be empty!');
     }
