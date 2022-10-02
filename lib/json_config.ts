@@ -1,12 +1,12 @@
 import { ConfigInterface } from './config';
 import { JSONValueType } from './types';
 import { NOTIFICATION_ID_PLACEHOLDER, CHANGE_EVENT_NAME } from './constants';
-import { LoadConfigService } from './load_config_service';
 import { ConfigChangeEvent } from './config_change_event';
 import { ConfigChange } from './config_change';
 import { PropertyChangeType } from './property_change_types';
 import { EventEmitter } from 'events';
-import { Access } from './access';
+import { Access, AuthHeader } from './access';
+import { JSONConfigContentType, Request } from './request';
 
 export class JSONConfig extends EventEmitter implements ConfigInterface {
 
@@ -92,52 +92,33 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
   }
 
   public async loadAndUpdateConfig(): Promise<void> {
-    const url = LoadConfigService.formatLoadConfigUrl(Object.assign({}, this.options, {
+    const url = Request.formatConfigUrl({
+      ...this.options,
       releaseKey: this.getReleaseKey(),
       ip: this.getIp(),
-    }));
-    try {
-      let headers: undefined | {
-        Authorization: string;
-        Timestamp: number;
-      };
-      if (this.options.secret) {
-        headers = Access.createAccessHeader(this.options.appId, url, this.options.secret);
-      }
-      const { error, response, body } = await LoadConfigService.loadConfig(url, { headers });
-      if (error) {
-        throw error;
-      }
-      if (response.statusCode === 200 && typeof body === 'string' && body) {
-        const loadConfigResponse: {
-          appId: string;
-          cluster: string;
-          namespaceName: string;
-          configurations: {
-            content: string;
-          };
-          releaseKey: string;
-        } = JSON.parse(body);
-        const content = loadConfigResponse.configurations.content;
-        if (content) {
-          let newConfigs: JSONValueType;
-          try {
-            newConfigs = JSON.parse(content);
-          } catch (error) {
-            newConfigs = content;
-          }
-          const { added, deleted, changed } = this.diffJSON(this.configs, newConfigs);
-          const listeners = this.listenerCount(CHANGE_EVENT_NAME);
-          const configChangeEvent = this.updateConfigAndCreateChangeEvent(added, deleted, changed, newConfigs, listeners);
-          if (configChangeEvent) {
-            this.emit(CHANGE_EVENT_NAME, configChangeEvent);
-          }
+    });
+    let headers: AuthHeader | undefined;
+    if (this.options.secret) {
+      headers = Access.createAccessHeader(this.options.appId, url, this.options.secret);
+    }
+    const loadConfigResp = await Request.fetchConfig<JSONConfigContentType>(url, headers);
+    if (loadConfigResp) {
+      const content = loadConfigResp.configurations.content;
+      if (content) {
+        let newConfigs: JSONValueType;
+        try {
+          newConfigs = JSON.parse(content);
+        } catch (error) {
+          newConfigs = content;
         }
-        this.setReleaseKey(loadConfigResponse.releaseKey);
+        const { added, deleted, changed } = this.diffJSON(this.configs, newConfigs);
+        const listeners = this.listenerCount(CHANGE_EVENT_NAME);
+        const configChangeEvent = this.updateConfigAndCreateChangeEvent(added, deleted, changed, newConfigs, listeners);
+        if (configChangeEvent) {
+          this.emit(CHANGE_EVENT_NAME, configChangeEvent);
+        }
       }
-      // ignore no updates
-    } catch (error) {
-      console.log('[apollo-node-client] %s - load json configs - %s', new Date(), error);
+      this.setReleaseKey(loadConfigResp.releaseKey);
     }
   }
 
@@ -151,13 +132,13 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
     const changed: string[] = [];
 
     if (typeof oldJSONValue === 'string' ||
-    typeof newJSONValue === 'string' ||
-    typeof oldJSONValue === 'number' ||
-    typeof newJSONValue === 'number' ||
-    typeof oldJSONValue === 'boolean' ||
-    typeof newJSONValue === 'boolean' ||
-    oldJSONValue === null ||
-    newJSONValue === null) {
+      typeof newJSONValue === 'string' ||
+      typeof oldJSONValue === 'number' ||
+      typeof newJSONValue === 'number' ||
+      typeof oldJSONValue === 'boolean' ||
+      typeof newJSONValue === 'boolean' ||
+      oldJSONValue === null ||
+      newJSONValue === null) {
       if (oldJSONValue !== newJSONValue) {
         changed.push(prefix);
       }
@@ -192,7 +173,11 @@ export class JSONConfig extends EventEmitter implements ConfigInterface {
         added.push(newKey);
       } else {
         // merge returned value
-        const { added: _added, deleted: _deleted, changed: _changed } = this.diffJSON(oldJSONValue[key], newJSONValue[key], newKey);
+        const {
+          added: _added,
+          deleted: _deleted,
+          changed: _changed
+        } = this.diffJSON(oldJSONValue[key], newJSONValue[key], newKey);
         added.push(..._added);
         deleted.push(..._deleted);
         changed.push(..._changed);

@@ -5,7 +5,7 @@ const service = new ConfigService({
   configServerUrl: 'http://localhost:8080/',
   appId: 'SampleApp',
   clusterName: 'default',
-  secret: 'cf86d564d10a46d4a5989dfdeed3a3a2'
+  secret: '0ddfacb7ce2e449f8a07b152fbba9375'
 });
 
 async function main(): Promise<void> {

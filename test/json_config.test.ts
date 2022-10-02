@@ -1,38 +1,25 @@
 import { JSONConfig } from '../lib/json_config';
-import { Request } from '../lib/request';
-import * as request from 'request';
+import { JSONConfigContentType, LoadConfigResp, Request } from '../lib/request';
 import { JSONValueType } from '../lib/types';
 import { ConfigChangeEvent } from '../lib/config_change_event';
 import { PropertyChangeType } from '../lib/property_change_types';
+import { CHANGE_EVENT_NAME } from '../lib/constants';
 
 jest.mock('../lib/request');
 const mockRequest = Request as jest.Mocked<typeof Request>;
-const mockResponse = (configs: JSONValueType): {
-  error: undefined | Error;
-  response: request.Response;
-  body: unknown;
-} => {
-  const body = {
+const mockResponse = (configs: JSONValueType): LoadConfigResp<JSONConfigContentType> => {
+  return {
     'appId': 'SampleApp',
     'cluster': 'default',
     'namespaceName': 'application',
     'configurations': {
-      'content': typeof configs === 'string' ? configs : JSON.stringify(configs),
+      'content': JSON.stringify(configs),
     },
     'releaseKey': '20200203154030-1dc524aa9a4a5974'
   };
-  return {
-    error: undefined,
-    response: { statusCode: 200 } as request.Response,
-    body: JSON.stringify(body),
-  };
 };
-const mockErrorResponse = {
-  error: new Error('Mock network 500 error.'),
-  response: { statusCode: 500 } as request.Response,
-  body: '',
-};
-const initResponse = {
+
+const initResp = {
   strKey: 'string',
   objKey: {
     arrKey: [1, 2, 3],
@@ -40,8 +27,6 @@ const initResponse = {
   },
   numberKey: 3,
 };
-const mockInitResponse = mockResponse(initResponse);
-const mockStringResponse = mockResponse('test config string');
 
 const configOptions = {
   configServerUrl: 'http://localhost:8080/',
@@ -53,12 +38,12 @@ const configOptions = {
 const jsonConfig = new JSONConfig(configOptions, '0.0.0.0');
 
 beforeAll(() => {
-  mockRequest.get.mockResolvedValueOnce(mockInitResponse);
+  mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse(initResp));
   return jsonConfig.loadAndUpdateConfig();
 });
 
 it('should return all the correct json configs', () => {
-  expect(jsonConfig.getAllConfig()).toEqual(initResponse);
+  expect(jsonConfig.getAllConfig()).toStrictEqual(initResp);
 });
 
 it('should return the correct value and default value', () => {
@@ -68,14 +53,14 @@ it('should return the correct value and default value', () => {
   const value1 = jsonConfig.getProperty('objKey.arrKey.none', defaultJsonValue);
   const value2 = jsonConfig.getProperty('objKey..arrKey', defaultJsonValue);
   const value3 = jsonConfig.getProperty('strKey.none', defaultJsonValue);
-  expect(value1).toEqual(defaultJsonValue);
-  expect(value2).toEqual(defaultJsonValue);
-  expect(value3).toEqual(defaultJsonValue);
+  expect(value1).toStrictEqual(defaultJsonValue);
+  expect(value2).toStrictEqual(defaultJsonValue);
+  expect(value3).toStrictEqual(defaultJsonValue);
 });
 
-it('should get the correct changeEvent', async (done: jest.DoneCallback) => {
+it('should get the correct changeEvent', (done: jest.DoneCallback) => {
   try {
-    jsonConfig.addChangeListener((changeEvent: ConfigChangeEvent<any>) => {
+    const handle = (changeEvent: ConfigChangeEvent<any>): void => {
       try {
         expect(changeEvent.getNamespace()).toBe('application');
         expect(changeEvent.changedKeys().sort()).toEqual(['objKey.nullKey', 'objKey.arrKey', 'addedKey', 'strKey'].sort());
@@ -110,33 +95,44 @@ it('should get the correct changeEvent', async (done: jest.DoneCallback) => {
         expect(modifiedChange.getNewValue()).toEqual([1, 2, 3, 4]);
         expect(modifiedChange.getChangeType()).toBe(PropertyChangeType.MODIFIED);
 
+        jsonConfig.removeListener(CHANGE_EVENT_NAME, handle);
         done();
       } catch (error) {
         done(error);
       }
-    });
-    mockRequest.get.mockResolvedValueOnce(mockResponse({
+    };
+    jsonConfig.addChangeListener(handle);
+    mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse({
       objKey: {
         arrKey: [1, 2, 3, 4]
       },
       numberKey: 3,
       addedKey: [1],
     }));
-    await jsonConfig.loadAndUpdateConfig();
+    jsonConfig.loadAndUpdateConfig().then();
   } catch (error) {
     done(error);
   }
 });
 
 it('should ignore request error', async () => {
-  mockRequest.get.mockResolvedValueOnce(mockErrorResponse);
-  await jsonConfig.loadAndUpdateConfig();
+  mockRequest.fetchConfig.mockRejectedValueOnce(new Error('Mock reject fetch config'));
+  expect(jsonConfig.loadAndUpdateConfig()).rejects.toThrow();
 });
 
 it('should parse correctly when config type is a string', async () => {
-  const jsonConfig = new JSONConfig(configOptions, '0.0.0.0');
-  mockRequest.get.mockResolvedValueOnce(mockStringResponse);
+  const stringValue = 'stringValue';
+  mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse(stringValue));
   await jsonConfig.loadAndUpdateConfig();
-  const value = jsonConfig.getAllConfig();
-  expect(value).toBe(JSON.parse(mockStringResponse.body as string).configurations.content);
+  expect(jsonConfig.getAllConfig()).toEqual(stringValue);
+});
+
+it('should parse success when fetch config return null', async () => {
+  mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse(initResp));
+  await jsonConfig.loadAndUpdateConfig();
+  expect(jsonConfig.getAllConfig()).toStrictEqual(initResp);
+
+  mockRequest.fetchConfig.mockResolvedValueOnce(null);
+  await jsonConfig.loadAndUpdateConfig();
+  expect(jsonConfig.getAllConfig()).toStrictEqual(initResp);
 });

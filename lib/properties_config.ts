@@ -1,11 +1,11 @@
 import { ConfigInterface } from './config';
 import { NOTIFICATION_ID_PLACEHOLDER, CHANGE_EVENT_NAME } from './constants';
-import { LoadConfigService } from './load_config_service';
 import { EventEmitter } from 'events';
 import { ConfigChangeEvent } from './config_change_event';
 import { ConfigChange } from './config_change';
 import { PropertyChangeType } from './property_change_types';
-import { Access } from './access';
+import { Access, AuthHeader } from './access';
+import { KVConfigContentType, Request } from './request';
 
 export class PropertiesConfig extends EventEmitter implements ConfigInterface {
 
@@ -77,46 +77,27 @@ export class PropertiesConfig extends EventEmitter implements ConfigInterface {
   }
 
   public async loadAndUpdateConfig(): Promise<void> {
-    const url = LoadConfigService.formatLoadConfigUrl(Object.assign({}, this.options, {
+    const url = Request.formatConfigUrl({
+      ...this.options,
       releaseKey: this.getReleaseKey(),
       ip: this.getIp(),
-    }));
-    try {
-      let headers: undefined | {
-        Authorization: string;
-        Timestamp: number;
-      };
-      if (this.options.secret) {
-        headers = Access.createAccessHeader(this.options.appId, url, this.options.secret);
+    });
+    let headers: AuthHeader | undefined;
+    if (this.options.secret) {
+      headers = Access.createAccessHeader(this.options.appId, url, this.options.secret);
+    }
+    const loadConfigResp = await Request.fetchConfig<KVConfigContentType>(url, headers);
+    if (loadConfigResp) {
+      // diff change
+      const { added, deleted, changed } = this.diffMap(this.configs, loadConfigResp.configurations);
+      const changeListeners = this.listenerCount(CHANGE_EVENT_NAME);
+      // update change and emit changeEvent
+      const configChangeEvent = this.updateConfigAndCreateChangeEvent(added, deleted, changed, loadConfigResp.configurations, changeListeners);
+      if (configChangeEvent) {
+        this.emit(CHANGE_EVENT_NAME, configChangeEvent);
       }
-      const { error, response, body } = await LoadConfigService.loadConfig(url, { headers });
-      if (error) {
-        throw error;
-      }
-      if (response.statusCode === 200 && typeof body === 'string' && body) {
-        const loadConfigResponse: {
-          appId: string;
-          cluster: string;
-          namespaceName: string;
-          configurations: {
-            [key: string]: string;
-          };
-          releaseKey: string;
-        } = JSON.parse(body);
-        // diff change
-        const { added, deleted, changed } = this.diffMap(this.configs, loadConfigResponse.configurations);
-        const changeListeners = this.listenerCount(CHANGE_EVENT_NAME);
-        // update change and emit changeEvent
-        const configChangeEvent = this.updateConfigAndCreateChangeEvent(added, deleted, changed, loadConfigResponse.configurations, changeListeners);
-        if (configChangeEvent) {
-          this.emit(CHANGE_EVENT_NAME, configChangeEvent);
-        }
-        // update releaseKey
-        this.setReleaseKey(loadConfigResponse.releaseKey);
-      }
-      // ignore no updates
-    } catch (error) {
-      console.log('[apollo-node-client] %s - load properties configs - %s', new Date(), error);
+      // update releaseKey
+      this.setReleaseKey(loadConfigResp.releaseKey);
     }
   }
 

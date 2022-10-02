@@ -1,31 +1,30 @@
 import * as crypto from 'crypto';
 import { URL } from 'url';
 
+export type AuthHeader = {
+  Authorization: string;
+  Timestamp: string;
+};
+
 export class Access {
 
   public static DELIMITER = '\n';
 
-  public static createAccessHeader(appId: string, url: string, secret: string): {
-    Authorization: string;
-    Timestamp: number;
-  } {
+  public static createAccessHeader(appId: string, url: string, secret: string): AuthHeader {
     return this.createAccessHeaderByTimestamp(new Date().getTime(), appId, url, secret);
   }
 
-  private static createAccessHeaderByTimestamp(timestamp: number, appId: string, url: string, secret: string): {
-    Authorization: string;
-    Timestamp: number;
-  } {
+  private static createAccessHeaderByTimestamp(timestamp: number, appId: string, url: string, secret: string): AuthHeader {
     const accessHeader = {
       Authorization: '',
-      Timestamp: timestamp,
+      Timestamp: timestamp.toString(),
     };
     const sign = this.signature(accessHeader.Timestamp, this.url2PathWithQuery(url), secret);
     accessHeader.Authorization = `Apollo ${appId}:${sign}`;
     return accessHeader;
   }
 
-  private static signature(timestamp: number, pathWithQuery: string, secret: string): string {
+  private static signature(timestamp: string, pathWithQuery: string, secret: string): string {
     const hash = crypto.createHmac('sha1', secret);
     hash.update(timestamp + this.DELIMITER + pathWithQuery);
     return hash.digest('base64');
