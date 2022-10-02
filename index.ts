@@ -7,8 +7,6 @@ export * from './lib/config_change_event';
 export * from './lib/config_manager';
 export * from './lib/config_service';
 export * from './lib/json_config';
-export * from './lib/load_config_service';
-export * from './lib/load_notifications_service';
 export * from './lib/properties_config';
 export * from './lib/request';
 export * from './lib/types';

@@ -1,76 +1,16 @@
 import { ConfigManager } from '../lib/config_manager';
-import { Request } from '../lib/request';
-import * as request from 'request';
-import { URL } from 'url';
-import { LONG_POLL_FAILED_SLEEP_TIME } from '../lib/constants';
+import { Request, Notification } from '../lib/request';
+import {PropertiesConfig} from '../lib/properties_config';
+import {JSONConfig} from '../lib/json_config';
 
 jest.mock('../lib/request');
 const mockRequest = Request as jest.Mocked<typeof Request>;
 
-const mockFn = (url: string): Promise<{
-  error: undefined | Error;
-  response: request.Response;
-  body: unknown;
-}> => {
-  return new Promise(resolve => {
-    const encodedURL = new URL(url);
-    if (encodedURL.searchParams.get('notifications')) {
-      const notifications: {
-        namespaceName: string;
-        notificationId: number;
-      }[] = JSON.parse(encodedURL.searchParams.get('notifications') as string);
-      const res: {
-        namespaceName: string;
-        notificationId: number;
-      }[] = [];
-      for (const item of notifications) {
-        if (item.notificationId === -1) {
-          res.push({
-            namespaceName: item.namespaceName,
-            notificationId: 1,
-          });
-        }
-      }
-      if (res.length > 0) {
-        return resolve({
-          error: undefined,
-          response: { statusCode: 200 } as request.Response,
-          body: JSON.stringify(res),
-        });
-      }
-      setTimeout(() => {
-        return resolve({
-          error: undefined,
-          response: { statusCode: 304 } as request.Response,
-          body: '',
-        });
-      }, 60000);
-    } else {
-      return resolve({
-        error: undefined,
-        response: { statusCode: 304 } as request.Response,
-        body: '',
-      });
-    }
-  });
+const mockNotifications = (namespaceName: string, notificationId: number): Notification[] => {
+  return [{ namespaceName, notificationId }];
 };
 
-let mockErrorFnCounter = 0;
-const mockErrorFn = (): Promise<{
-  error: undefined | Error;
-  response: request.Response;
-  body: unknown;
-}> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      return resolve({
-        error: new Error('Mock network 500 error.'),
-        response: { statusCode: 500 } as request.Response,
-        body: '',
-      });
-    }, mockErrorFnCounter++ <= 1 ? 0 : 60000);
-  });
-};
+mockRequest.fetchNotifications.mockResolvedValue(mockNotifications('a', 1));
 
 const configManager = new ConfigManager({
   configServerUrl: 'http://localhost:8080/',
@@ -79,33 +19,42 @@ const configManager = new ConfigManager({
 });
 
 afterAll(() => {
-  return new Promise(resolve => {
-    setTimeout(resolve, LONG_POLL_FAILED_SLEEP_TIME + 500);
-  });
+  configManager.removeConfig('config');
+  configManager.removeConfig('config2.properties');
+  configManager.removeConfig('config3.json.properties');
+  configManager.removeConfig('.properties');
+  configManager.removeConfig('config.json');
+  configManager.removeConfig('config2.properties.json');
+  configManager.removeConfig('.json');
+  configManager.removeConfig('errorConfig');
 });
 
 it('should throw Error with not support', () => {
-  expect(configManager.getConfig('test.xml')).rejects.toThrowError(/XML/);
-  expect(configManager.getConfig('test.yml')).rejects.toThrowError(/YML/);
-  expect(configManager.getConfig('test.yaml')).rejects.toThrowError(/YAML/);
-  expect(configManager.getConfig('test.txt')).rejects.toThrowError(/TXT/);
+  expect(configManager.getConfig('test.xml')).rejects.toThrowError(/xml/);
+  expect(configManager.getConfig('test.yml')).rejects.toThrowError(/yml/);
+  expect(configManager.getConfig('test.yaml')).rejects.toThrowError(/yaml/);
+  expect(configManager.getConfig('test.txt')).rejects.toThrowError(/txt/);
 });
 
 it('should return a properties config', async () => {
-  mockRequest.get.mockImplementation(mockFn);
-  const config1 = await configManager.getConfig('test');
-  const config2 = await configManager.getConfig('test.properties');
-  expect(config1.getNamespaceName()).toBe('test');
-  expect(config2.getNamespaceName()).toBe('test');
+  const config1 = await configManager.getConfig('config');
+  expect(config1.getNamespaceName()).toEqual('config');
+  expect(config1 instanceof PropertiesConfig).toBeTruthy();
+
+  const config2 = await configManager.getConfig('config2.properties');
+  expect(config2.getNamespaceName()).toEqual('config2');
+  expect(config2 instanceof PropertiesConfig).toBeTruthy();
+
+  expect(configManager.getConfig('.properties')).rejects.toThrowError('empty');
 });
 
 it('should return a json config', async () => {
-  mockRequest.get.mockImplementation(mockFn);
-  const config = await configManager.getConfig('test.json');
-  expect(config.getNamespaceName()).toBe('test.json');
+  const config1 = await configManager.getConfig('config.json');
+  expect(config1.getNamespaceName()).toEqual('config.json');
+  expect(config1 instanceof JSONConfig).toBeTruthy();
 });
 
 it('should ignore the request error', async() => {
-  mockRequest.get.mockImplementation(mockErrorFn);
-  await configManager.getConfig('errorConfig');
+  mockRequest.fetchNotifications.mockRejectedValueOnce(new Error('Mock reject fetch config'));
+  expect(configManager.getConfig('errorConfig')).resolves.not.toThrowError();
 });

@@ -1,9 +1,21 @@
 import { PropertiesConfig } from './properties_config';
 import { ConfigTypes } from './config_types';
 import { CLUSTER_NAMESPACE_SEPARATOR, LONG_POLL_FAILED_SLEEP_TIME } from './constants';
-import { LoadNotificationsService } from './load_notifications_service';
 import { JSONConfig } from './json_config';
-import { Access } from './access';
+import { Access, AuthHeader } from './access';
+import { Request } from './request';
+
+export type ConfigManagerOptions = {
+  configServerUrl: string;
+  appId: string;
+  clusterName: string;
+  secret?: string;
+};
+
+type NamespacePair = {
+  namespaceName: string;
+  type: ConfigTypes;
+};
 
 export class ConfigManager {
 
@@ -11,49 +23,47 @@ export class ConfigManager {
 
   private configsMapVersion = 0;
 
-  private readonly REQUEST_TIME_OUT = 70000;
-
-  constructor(private readonly options: {
-    configServerUrl: string;
-    appId: string;
-    clusterName: string;
-    secret?: string;
-  }) {
+  constructor(private readonly options: ConfigManagerOptions) {
     this.options = options;
   }
 
+  private getTypeByNamespaceName(namespaceName: string): NamespacePair {
+    for (const key in ConfigTypes) {
+      if (namespaceName.endsWith(`.${ConfigTypes[key]}`)) {
+        return {
+          namespaceName: ConfigTypes[key] === ConfigTypes.PROPERTIES ?
+            namespaceName.substring(
+              0,
+              namespaceName.length - ConfigTypes[key].length - 1
+            ) : namespaceName,
+          type: ConfigTypes[key]
+        };
+      }
+    }
+    return { namespaceName, type: ConfigTypes.PROPERTIES };
+  }
+
   public async getConfig(namespaceName: string, ip?: string): Promise<PropertiesConfig | JSONConfig> {
-    let config = this.configsMap.get(namespaceName);
+    const type = this.getTypeByNamespaceName(namespaceName);
+    console.log(type);
+    if (!type.namespaceName) {
+      throw new Error('namespaceName can not be empty!');
+    }
+    const mpKey = this.formatConfigsMapKey(type.namespaceName);
+    let config = this.configsMap.get(mpKey);
     if (!config) {
-      const nameSlice = namespaceName.split('.');
-      const postfix = nameSlice.pop();
-      switch (postfix) {
-      case ConfigTypes.PROPERTIES:
+      if (type.type == ConfigTypes.PROPERTIES) {
         config = new PropertiesConfig({
           ...this.options,
-          namespaceName: nameSlice.join('.'),
+          namespaceName: type.namespaceName,
         }, ip);
-        break;
-      case ConfigTypes.JSON:
+      } else if (type.type == ConfigTypes.JSON) {
         config = new JSONConfig({
           ...this.options,
-          namespaceName,
+          namespaceName: type.namespaceName,
         }, ip);
-        break;
-      case ConfigTypes.XML:
-        throw new Error('XML type is not support!');
-      case ConfigTypes.YML:
-        throw new Error('YML type is not support!');
-      case ConfigTypes.YAML:
-        throw new Error('YAML type is not support!');
-      case ConfigTypes.TXT:
-        throw new Error('TXT type is not support!');
-      default:
-        config = new PropertiesConfig({
-          ...this.options,
-          namespaceName,
-        }, ip);
-        break;
+      } else {
+        throw new Error(`${type.type} is not support!`);
       }
 
       this.configsMapVersion = this.configsMapVersion % Number.MAX_SAFE_INTEGER + 1;
@@ -74,38 +84,33 @@ export class ConfigManager {
     return config;
   }
 
+  public removeConfig(namespaceName: string): void {
+    const type = this.getTypeByNamespaceName(namespaceName);
+    const mpKey = this.formatConfigsMapKey(type.namespaceName);
+    this.configsMap.delete(mpKey);
+  }
+
   private async updateConfigs(configsMap: Map<string, PropertiesConfig | JSONConfig>): Promise<void> {
-    const url = LoadNotificationsService.formatLongPollUrl({
+    const url = Request.formatNotificationsUrl({
       ...this.options,
     }, configsMap);
-    let headers: undefined | {
-      timeout: number;
-      Authorization?: string;
-      Timestamp?: number;
-    } = {
-      timeout: this.REQUEST_TIME_OUT,
-    };
+    let headers: undefined | AuthHeader;
     if (this.options.secret) {
-      headers = {
-        ...headers,
-        ...Access.createAccessHeader(this.options.appId, url, this.options.secret),
-      };
+      headers = Access.createAccessHeader(this.options.appId, url, this.options.secret);
     }
-    const { error, response, body } = await LoadNotificationsService.loadNotifications(url, { headers });
-    if (error) {
-      throw error;
-    }
-    if (response && response.statusCode === 200 && typeof body === 'string' && body) {
-      const notificationsResponse: {
-        namespaceName: string;
-        notificationId: number;
-      }[] = JSON.parse(body);
-      for (const item of notificationsResponse) {
+    const notification = await Request.fetchNotifications(url, headers);
+
+    if (notification) {
+      for (const item of notification) {
         const key = this.formatConfigsMapKey(item.namespaceName);
         const config = this.configsMap.get(key);
         if (config) {
-          await config.loadAndUpdateConfig();
-          config.setNotificationId(item.notificationId);
+          try {
+            await config.loadAndUpdateConfig();
+            config.setNotificationId(item.notificationId);
+          } catch (error) {
+            console.log('[apollo-node-client] %s - fetch configs - %s', new Date(), error);
+          }
         }
       }
     }
@@ -124,9 +129,11 @@ export class ConfigManager {
       await this.sleep(LONG_POLL_FAILED_SLEEP_TIME);
     }
 
-    setImmediate(async () => {
-      await this.startLongPoll(configsMapVersion);
-    });
+    if (this.configsMap.size > 0) {
+      setImmediate(async () => {
+        await this.startLongPoll(configsMapVersion);
+      });
+    }
   }
 
   private formatConfigsMapKey(namespaceName: string): string {

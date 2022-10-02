@@ -3,7 +3,7 @@
   "version": "1.2.0",
   "description": "Node.js Client for Apollo",
   "author": "zhangxh1023",
-  "email": "zhangxh1023@qq.com",
+  "email": "zhangxh1023@gmail.com",
   "url": "https://github.com/zhangxh1023/apollo-node-client",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -21,7 +21,7 @@
     "ctrip apollo client"
   ],
   "scripts": {
-    "build": "tsc --sourceMap false",
+    "build": "tsc --sourceMap false -p tsconfig.json",
     "clean": "rm -rf dist coverage",
     "lint": "eslint --ext .ts .",
     "fix": "eslint --fix --ext .ts .",
@@ -31,19 +31,20 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@types/jest": "^25.1.1",
-    "@types/node": "^13.7.0",
-    "@types/qs": "^6.9.0",
-    "@types/request": "^2.48.4",
+    "@types/jest": "^29.0.3",
+    "@types/node": "^18.7.18",
+    "@types/node-fetch": "^2.6.2",
     "@typescript-eslint/eslint-plugin": "^2.19.0",
     "@typescript-eslint/parser": "^2.19.0",
     "eslint": "^6.8.0",
-    "jest": "^25.1.0",
-    "ts-jest": "^25.2.0",
-    "typescript": "^3.9.9"
+    "i": "^0.3.7",
+    "jest": "^29.0.3",
+    "npm": "^8.19.2",
+    "ts-jest": "^29.0.1",
+    "typescript": "^4.8.3"
   },
   "dependencies": {
-    "qs": "^6.9.1",
-    "request": "^2.88.0"
+    "node-fetch": "^2.6.7",
+    "query-string": "^7.1.1"
   }
 }
