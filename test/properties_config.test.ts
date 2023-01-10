@@ -1,8 +1,7 @@
-import { PropertiesConfig } from '../lib/properties_config';
-import { KVConfigContentType, LoadConfigResp, Request } from '../lib/request';
+import { KVConfigContentType, PropertiesConfig } from '../lib/properties_config';
+import { LoadConfigResp, Request } from '../lib/request';
 import { ConfigChangeEvent } from '../lib/config_change_event';
-import { PropertyChangeType } from '../lib/property_change_types';
-import { CHANGE_EVENT_NAME } from '../lib/constants';
+import { CHANGE_EVENT_NAME, PropertyChangeType } from '../lib/constants';
 
 
 jest.mock('../lib/request');
@@ -12,13 +11,13 @@ const mockResponse = (configurations: KVConfigContentType): LoadConfigResp<KVCon
   return {
     'appId': 'SampleApp',
     'cluster': 'default',
-    namespaceName,
+    'releaseKey': '20200203154030-1dc524aa9a4a5974',
     'configurations': configurations,
-    'releaseKey': '20200203154030-1dc524aa9a4a5974'
+    namespaceName,
   };
 };
 
-const initResp = {
+const initConfigs = {
   'a.b': '',
   'a.b.c': '2',
 };
@@ -27,20 +26,20 @@ const configOptions = {
   configServerUrl: 'http://localhost:8080/',
   appId: 'SampleApp',
   clusterName: 'default',
-  namespaceName: 'application',
+  namespaceName,
 };
 
 const propertiesConfig = new PropertiesConfig(configOptions, '0.0.0.0');
 
 beforeAll(() => {
-  mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse(initResp));
+  mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse(initConfigs));
   return propertiesConfig.loadAndUpdateConfig();
 });
 
 it('should return all the correct properties configs', () => {
-  expect(propertiesConfig.getAllConfig()).toStrictEqual(new Map(Object.entries(initResp)));
-  expect(propertiesConfig.getProperty('a.b')).toBe(initResp['a.b']);
-  expect(propertiesConfig.getProperty('a.b.c')).toBe(initResp['a.b.c']);
+  expect(propertiesConfig.getAllConfig()).toStrictEqual(new Map(Object.entries(initConfigs)));
+  expect(propertiesConfig.getProperty('a.b')).toBe(initConfigs['a.b']);
+  expect(propertiesConfig.getProperty('a.b.c')).toBe(initConfigs['a.b.c']);
 });
 
 it('should return the correct value and default value', () => {
@@ -50,14 +49,14 @@ it('should return the correct value and default value', () => {
 it('should get the correct changeEvent', (done: jest.DoneCallback): void => {
   try {
     const handle = (changeEvent: ConfigChangeEvent<string>): void => {
-      expect(changeEvent.getNamespace()).toBe('application');
+      expect(changeEvent.getNamespace()).toBe(namespaceName);
       expect(changeEvent.changedKeys().sort()).toStrictEqual(['a.b', 'a.b.c', 'b.a'].sort());
 
       const addedChange = changeEvent.getChange('b.a');
       if (!addedChange) {
-        throw 'Missing added change';
+        throw new Error('Missing added change');
       }
-      expect(addedChange.getNamespace()).toBe('application');
+      expect(addedChange.getNamespace()).toBe(namespaceName);
       expect(addedChange.getPropertyName()).toBe('b.a');
       expect(addedChange.getOldValue()).toBeUndefined();
       expect(addedChange.getNewValue()).toBe('3');
@@ -65,9 +64,9 @@ it('should get the correct changeEvent', (done: jest.DoneCallback): void => {
 
       const deletedChange = changeEvent.getChange('a.b');
       if (!deletedChange) {
-        throw 'Missing deleted change';
+        throw new Error('Missing deleted change');
       }
-      expect(deletedChange.getNamespace()).toBe('application');
+      expect(deletedChange.getNamespace()).toBe(namespaceName);
       expect(deletedChange.getPropertyName()).toBe('a.b');
       expect(deletedChange.getOldValue()).toBe('');
       expect(deletedChange.getNewValue()).toBeUndefined();
@@ -75,9 +74,9 @@ it('should get the correct changeEvent', (done: jest.DoneCallback): void => {
 
       const modifiedChange = changeEvent.getChange('a.b.c');
       if (!modifiedChange) {
-        throw 'Missing modified change';
+        throw new Error('Missing modified change');
       }
-      expect(modifiedChange.getNamespace()).toBe('application');
+      expect(modifiedChange.getNamespace()).toBe(namespaceName);
       expect(modifiedChange.getPropertyName()).toBe('a.b.c');
       expect(modifiedChange.getOldValue()).toBe('2');
       expect(modifiedChange.getNewValue()).toBe('1');
@@ -98,12 +97,17 @@ it('should get the correct changeEvent', (done: jest.DoneCallback): void => {
 });
 
 it('should throw request error', async () => {
-  mockRequest.fetchConfig.mockRejectedValueOnce(new Error('Mock reject fetch config'));
-  expect(propertiesConfig.loadAndUpdateConfig()).rejects.toThrow();
+  const error = new Error('Mock reject fetch config');
+  mockRequest.fetchConfig.mockRejectedValueOnce(error);
+  try {
+    await propertiesConfig.loadAndUpdateConfig();
+  } catch (e) {
+    expect(e).toEqual(error);
+  }
 });
 
 it('should update config and correctly', async () => {
-  mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse(initResp));
+  mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse(initConfigs));
   await propertiesConfig.loadAndUpdateConfig();
   const newConfig = {
     '1': 'a',
@@ -115,11 +119,11 @@ it('should update config and correctly', async () => {
 });
 
 it('should parse success when fetch config return null', async () => {
-  mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse(initResp));
+  mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse(initConfigs));
   await propertiesConfig.loadAndUpdateConfig();
-  expect(propertiesConfig.getAllConfig()).toStrictEqual(new Map(Object.entries(initResp)));
+  expect(propertiesConfig.getAllConfig()).toStrictEqual(new Map(Object.entries(initConfigs)));
 
   mockRequest.fetchConfig.mockResolvedValueOnce(null);
   await propertiesConfig.loadAndUpdateConfig();
-  expect(propertiesConfig.getAllConfig()).toStrictEqual(new Map(Object.entries(initResp)));
+  expect(propertiesConfig.getAllConfig()).toStrictEqual(new Map(Object.entries(initConfigs)));
 });

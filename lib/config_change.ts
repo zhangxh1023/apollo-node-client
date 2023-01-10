@@ -1,4 +1,5 @@
-import { PropertyChangeType } from './property_change_types';
+import { PropertyChangeType } from './constants';
+
 
 export class ConfigChange<T> {
   constructor(

@@ -1,9 +1,11 @@
-export type JSONBaseType = string | number | boolean | null;
-
-export type JSONArrayType = JSONBaseType[];
-
-export type JSONType = {
-  [key: string]: JSONBaseType | JSONArrayType | JSONType;
+export type ConfigOptions = {
+  configServerUrl: string;
+  appId: string;
+  clusterName: string;
+  namespaceName: string;
+  secret?: string;
 }
 
-export type JSONValueType = JSONBaseType | JSONArrayType | JSONType;
+export type ConfigContentType = {
+  content: string;
+}

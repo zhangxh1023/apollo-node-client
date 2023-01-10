@@ -1,35 +1,27 @@
-import { ConfigInterface } from './config';
-import { NOTIFICATION_ID_PLACEHOLDER, CHANGE_EVENT_NAME } from './constants';
-import { EventEmitter } from 'events';
-import { ConfigChangeEvent } from './config_change_event';
+import { AuthHeader } from './access';
+import { Config } from './config';
+import { ConfigInterface } from './configInterface';
 import { ConfigChange } from './config_change';
-import { PropertyChangeType } from './property_change_types';
-import { Access, AuthHeader } from './access';
-import { KVConfigContentType, Request } from './request';
+import { ConfigChangeEvent } from './config_change_event';
+import { CHANGE_EVENT_NAME, PropertyChangeType } from './constants';
+import { Request } from './request';
+import { ConfigOptions } from './types';
 
-export class PropertiesConfig extends EventEmitter implements ConfigInterface {
+export type KVConfigContentType = {
+  [key: string]: string;
+};
+
+export class PropertiesConfig extends Config implements ConfigInterface {
 
   private configs: Map<string, string> = new Map();
 
-  private releaseKey = '';
-
-  private notificationId = NOTIFICATION_ID_PLACEHOLDER;
-
-  constructor(private readonly options: {
-    configServerUrl: string;
-    appId: string;
-    clusterName: string;
-    namespaceName: string;
-    secret?: string;
-  }, private readonly ip?: string) {
-    super();
-    this.options = options;
-    this.ip = ip;
+  constructor(options: ConfigOptions, ip?: string) {
+    super(options, ip);
   }
 
   public getProperty(key: string, defaultValue?: string): undefined | string {
     const value = this.configs.get(key);
-    if (value || value === '') {
+    if (value !== undefined) {
       return value;
     }
     return defaultValue;
@@ -47,52 +39,21 @@ export class PropertiesConfig extends EventEmitter implements ConfigInterface {
     return this.configs.delete(key);
   }
 
-  public getNamespaceName(): string {
-    return this.options.namespaceName;
-  }
-
-  public getIp(): undefined | string {
-    return this.ip;
-  }
-
-  private getReleaseKey(): string {
-    return this.releaseKey;
-  }
-
-  private setReleaseKey(newReleaseKey: string): void {
-    this.releaseKey = newReleaseKey;
-  }
-
-  public getNotificationId(): number {
-    return this.notificationId;
-  }
-
-  public setNotificationId(newNotificationId: number): void {
-    this.notificationId = newNotificationId;
-  }
-
   public addChangeListener(fn: (changeEvent: ConfigChangeEvent<string>) => void): PropertiesConfig {
     this.addListener(CHANGE_EVENT_NAME, fn);
     return this;
   }
 
-  public async loadAndUpdateConfig(): Promise<void> {
-    const url = Request.formatConfigUrl({
-      ...this.options,
-      releaseKey: this.getReleaseKey(),
-      ip: this.getIp(),
-    });
-    let headers: AuthHeader | undefined;
-    if (this.options.secret) {
-      headers = Access.createAccessHeader(this.options.appId, url, this.options.secret);
-    }
+  public async _loadAndUpdateConfig(url: string, headers: AuthHeader | undefined): Promise<void> {
     const loadConfigResp = await Request.fetchConfig<KVConfigContentType>(url, headers);
     if (loadConfigResp) {
       // diff change
       const { added, deleted, changed } = this.diffMap(this.configs, loadConfigResp.configurations);
-      const changeListeners = this.listenerCount(CHANGE_EVENT_NAME);
       // update change and emit changeEvent
-      const configChangeEvent = this.updateConfigAndCreateChangeEvent(added, deleted, changed, loadConfigResp.configurations, changeListeners);
+      const configChangeEvent = this.updateConfigAndCreateChangeEvent(added,
+        deleted,
+        changed,
+        loadConfigResp.configurations);
       if (configChangeEvent) {
         this.emit(CHANGE_EVENT_NAME, configChangeEvent);
       }
@@ -132,30 +93,23 @@ export class PropertiesConfig extends EventEmitter implements ConfigInterface {
 
   private updateConfigAndCreateChangeEvent(added: string[], deleted: string[], changed: string[], newConfigs: {
     [key: string]: string;
-  }, changeListeners: number): undefined | ConfigChangeEvent<string> {
-    // if changeListeners === 0, not create ConfigChange
+  }): undefined | ConfigChangeEvent<string> {
     const configChanges: Map<string, ConfigChange<string>> = new Map();
 
     for (const addedKey of added) {
       const newConfigValue = newConfigs[addedKey];
-      if (changeListeners > 0) {
-        configChanges.set(addedKey, new ConfigChange<string>(this.getNamespaceName(), addedKey, undefined, newConfigValue, PropertyChangeType.ADDED));
-      }
+      configChanges.set(addedKey, new ConfigChange<string>(this.getNamespaceName(), addedKey, undefined, newConfigValue, PropertyChangeType.ADDED));
       this.setProperty(addedKey, newConfigValue);
     }
 
     for (const deletedKey of deleted) {
-      if (changeListeners > 0) {
-        configChanges.set(deletedKey, new ConfigChange<string>(this.getNamespaceName(), deletedKey, this.configs.get(deletedKey), undefined, PropertyChangeType.DELETED));
-      }
+      configChanges.set(deletedKey, new ConfigChange<string>(this.getNamespaceName(), deletedKey, this.configs.get(deletedKey), undefined, PropertyChangeType.DELETED));
       this.deleteProperty(deletedKey);
     }
 
     for (const changedKey of changed) {
       const newConfigsValue = newConfigs[changedKey];
-      if (changeListeners > 0) {
-        configChanges.set(changedKey, new ConfigChange<string>(this.getNamespaceName(), changedKey, this.configs.get(changedKey), newConfigs[changedKey], PropertyChangeType.MODIFIED));
-      }
+      configChanges.set(changedKey, new ConfigChange<string>(this.getNamespaceName(), changedKey, this.configs.get(changedKey), newConfigs[changedKey], PropertyChangeType.MODIFIED));
       this.setProperty(changedKey, newConfigsValue);
     }
 

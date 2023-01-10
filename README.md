@@ -48,6 +48,13 @@ console.log(config.getProperty('mysql.user'));                  // root
 console.log(config.getProperty('mysql.missing'), 'default');    // default
 ```
 
+### 获取 `xml/yml/yaml/txt` 格式 `namespace` 的配置
+```javascript
+const config = await service.getConfig('config.txt');
+config.getAllConfig();                                          // txt config
+console.log(config.getProperty(''));                            // txt config
+```
+
 ### 指定灰度发布的服务 `ip`
 ```javascript
 const config = await service.getConfig('application', '192.168.3.4');
@@ -85,20 +92,16 @@ config.addChangeListener((changeEvent) => {
   
   - Returns: _ConfigService_
 
----
-
 - configService.getAppConfig( [ ip ] )
   - `[ip]` _\<string>_ 应用部署的机器ip
 
   - Returns: _Promise\<PropertiesConfig>_ 默认的 `namespace` 为 `application`
 
----
-
 - configService.getConfig( namespaceName, [ ip ] )
-  - `namespaceName` _\<string>_ Namespace的名字，以后缀名判断是什么类型格式的 `Config`。如果没有后缀名，默认为 `properties`，目前只支持 `.json`，`.properties`
+  - `namespaceName` _\<string>_ Namespace的名字，以后缀名判断是什么类型格式的 `Config`。如果没有后缀名，默认为 `properties`，目前支持 `.json`，`.properties`，`.xml`，`.yml`， `.yaml`，`.txt`
   - `[ip]` _\<string>_ 应用部署的机器ip
 
-  - Returns: _Promise\<PropertiesConfig | JSONConfig>_
+  - Returns: _Promise\<PropertiesConfig | JSONConfig | PlainConfig>_
 
 ---
 
@@ -108,15 +111,11 @@ config.addChangeListener((changeEvent) => {
 
   - Returns: _Map\<string, string>_
 
----
-
 - propertiesConfig.getProperty( key, [ defaultValue ] )
   - `key` _\<string>_ 要获取的配置的 `key`
   - `[defaultValue]` _\<string>_ 默认值，当传入的 `key` 不存在时，会返回 `defaultValue`
 
   - Returns: _undefined | string_
-
----
 
 - propertiesConfig.addChangeListener( handle )
   - `handle` _( changeEvent: ConfigChangeEvent\<string> ) => void_ 监听配置变化事件的回调函数
@@ -131,20 +130,30 @@ config.addChangeListener((changeEvent) => {
 
   - Returns: _JSONValueType_
 
----
-
 - jsonConfig.getProperty( key, [ defaultValue ] )
   - `key` _\<string>_ 要获取的配置的 `key`
   - `[defaultValue]` _\<string>_ 默认值，当传入的 `key` 不存在时，会返回 `defaultValue`
 
   - Returns: _undefined | JSONValueType_
 
----
-
 - jsonConfig.addChangeListener( handle )
   - `handle` _( changeEvent: ConfigChangeEvent\<JSONValueType> ) => void_ 监听配置变化事件的回调函数
 
   - Returns: _void_
+
+---
+
+### Class: PlainConfig
+
+- plainConfig.getAllConfig()
+
+  - Returns: _string_
+
+- plainConfig.getProperty( key, [ defaultValue ] )
+  - `key` _\<string>_ 兼容其他类型的 _Config_，不做校验，传入任意 `key` 都会返回整个配置文本内容
+  - `[defaultValue]` _\<string>_ 默认值，当配置不存在时，会返回 `defaultValue`
+
+  - Returns: _undefined | string_
 
 ---
 
@@ -154,13 +163,9 @@ config.addChangeListener((changeEvent) => {
   
   - Returns: _string_
 
----
-
 - configChangeEvent.changedKeys()
 
   - Returns: _string[]_
-
----
 
 - configChangeEvent.getChange()
 
@@ -174,25 +179,17 @@ config.addChangeListener((changeEvent) => {
 
   - Returns: _string_
 
----
-
 - configChange.getPropertyName()
 
   - Returns: _string_
-
----
 
 - configChange.getOldValues()
 
   - Returns: _undefined | T_
 
----
-
 - configChange.getNewValue()
 
   - Returns: _undefined | T_
-
----
 
 - configChange.getChangeType()
 
@@ -204,10 +201,14 @@ config.addChangeListener((changeEvent) => {
 
 - propertyChangeType.ADDED
 
----
-
 - propertyChangeType.MODIFIED
 
+- propertyChangeType.DELETED
+
 ---
 
-- propertyChangeType.DELETED
+## Contributing
+Contributions are always welcome!
+
+## License
+[MIT](https://github.com/zhangxh1023/apollo-node-client/blob/master/LICENSE)

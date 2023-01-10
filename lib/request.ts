@@ -1,6 +1,6 @@
 import fetch, { HeadersInit } from 'node-fetch';
 import { stringify } from 'query-string';
-import { ConfigInterface } from './config';
+import { ConfigInterface } from './configInterface';
 
 export type ConfigUrlOptions = {
   configServerUrl: string;
@@ -26,14 +26,6 @@ export type Notification = {
   namespaceName: string;
   notificationId: number;
 };
-
-export type KVConfigContentType = {
-  [key: string]: string;
-};
-
-export type JSONConfigContentType = {
-  content: string;
-}
 
 export type LoadConfigResp<T> = {
   appId: string;
@@ -61,7 +53,7 @@ export class Request {
     const response = await fetch(url, { headers });
     const status = response.status;
     const text = await response.text();
-    if (status == 304) return null;
+    if (status === 304) return null;
     if (status != 200) throw new Error(`Http request error: ${status}, ${response.statusText}`);
     if (!text) return null;
     return JSON.parse(text);
@@ -91,7 +83,7 @@ export class Request {
     const response = await fetch(url, { headers, timeout: 70000 });
     const status = response.status;
     const text = await response.text();
-    if (status == 304) return null;
+    if (status === 304) return null;
     if (status != 200) throw new Error(`Http request error: ${status}, ${response.statusText}`);
     if (!text) return null;
     return JSON.parse(text);

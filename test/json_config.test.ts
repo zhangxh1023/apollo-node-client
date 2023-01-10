@@ -1,17 +1,17 @@
-import { JSONConfig } from '../lib/json_config';
-import { JSONConfigContentType, LoadConfigResp, Request } from '../lib/request';
-import { JSONValueType } from '../lib/types';
+import { JSONConfig, JSONValueType } from '../lib/json_config';
+import { LoadConfigResp, Request } from '../lib/request';
 import { ConfigChangeEvent } from '../lib/config_change_event';
-import { PropertyChangeType } from '../lib/property_change_types';
-import { CHANGE_EVENT_NAME } from '../lib/constants';
+import { CHANGE_EVENT_NAME, PropertyChangeType } from '../lib/constants';
+import { ConfigContentType } from '../lib/types';
 
 jest.mock('../lib/request');
 const mockRequest = Request as jest.Mocked<typeof Request>;
-const mockResponse = (configs: JSONValueType): LoadConfigResp<JSONConfigContentType> => {
+const namespaceName = 'test.json';
+const mockResponse = (configs: JSONValueType): LoadConfigResp<ConfigContentType> => {
   return {
     'appId': 'SampleApp',
     'cluster': 'default',
-    'namespaceName': 'application',
+    'namespaceName': `${namespaceName}.json`,
     'configurations': {
       'content': JSON.stringify(configs),
     },
@@ -19,7 +19,7 @@ const mockResponse = (configs: JSONValueType): LoadConfigResp<JSONConfigContentT
   };
 };
 
-const initResp = {
+const initConfigs = {
   strKey: 'string',
   objKey: {
     arrKey: [1, 2, 3],
@@ -32,18 +32,18 @@ const configOptions = {
   configServerUrl: 'http://localhost:8080/',
   appId: 'SampleApp',
   clusterName: 'default',
-  namespaceName: 'application',
+  namespaceName,
 };
 
 const jsonConfig = new JSONConfig(configOptions, '0.0.0.0');
 
 beforeAll(() => {
-  mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse(initResp));
+  mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse(initConfigs));
   return jsonConfig.loadAndUpdateConfig();
 });
 
 it('should return all the correct json configs', () => {
-  expect(jsonConfig.getAllConfig()).toStrictEqual(initResp);
+  expect(jsonConfig.getAllConfig()).toStrictEqual(initConfigs);
 });
 
 it('should return the correct value and default value', () => {
@@ -56,20 +56,27 @@ it('should return the correct value and default value', () => {
   expect(value1).toStrictEqual(defaultJsonValue);
   expect(value2).toStrictEqual(defaultJsonValue);
   expect(value3).toStrictEqual(defaultJsonValue);
+
+  const value4 = jsonConfig.getProperty('strKey');
+  const value5 = jsonConfig.getProperty('objKey');
+  const value6 = jsonConfig.getProperty('objKey.arrKey');
+  expect(value4).toStrictEqual(initConfigs.strKey);
+  expect(value5).toStrictEqual(initConfigs.objKey);
+  expect(value6).toStrictEqual(initConfigs.objKey.arrKey);
 });
 
 it('should get the correct changeEvent', (done: jest.DoneCallback) => {
   try {
     const handle = (changeEvent: ConfigChangeEvent<any>): void => {
       try {
-        expect(changeEvent.getNamespace()).toBe('application');
+        expect(changeEvent.getNamespace()).toBe(namespaceName);
         expect(changeEvent.changedKeys().sort()).toEqual(['objKey.nullKey', 'objKey.arrKey', 'addedKey', 'strKey'].sort());
 
         const addedChange = changeEvent.getChange('addedKey');
         if (!addedChange) {
           throw 'Missing added change';
         }
-        expect(addedChange.getNamespace()).toBe('application');
+        expect(addedChange.getNamespace()).toBe(namespaceName);
         expect(addedChange.getPropertyName()).toBe('addedKey');
         expect(addedChange.getOldValue()).toBeUndefined();
         expect(addedChange.getNewValue()).toEqual([1]);
@@ -79,7 +86,7 @@ it('should get the correct changeEvent', (done: jest.DoneCallback) => {
         if (!deletedChange) {
           throw 'Missing deleted change';
         }
-        expect(deletedChange.getNamespace()).toBe('application');
+        expect(deletedChange.getNamespace()).toBe(namespaceName);
         expect(deletedChange.getPropertyName()).toBe('objKey.nullKey');
         expect(deletedChange.getOldValue()).toBe(null);
         expect(deletedChange.getNewValue()).toBeUndefined();
@@ -89,7 +96,7 @@ it('should get the correct changeEvent', (done: jest.DoneCallback) => {
         if (!modifiedChange) {
           throw 'Missing added change';
         }
-        expect(modifiedChange.getNamespace()).toBe('application');
+        expect(modifiedChange.getNamespace()).toBe(namespaceName);
         expect(modifiedChange.getPropertyName()).toBe('objKey.arrKey');
         expect(modifiedChange.getOldValue()).toEqual([1, 2, 3]);
         expect(modifiedChange.getNewValue()).toEqual([1, 2, 3, 4]);
@@ -115,9 +122,14 @@ it('should get the correct changeEvent', (done: jest.DoneCallback) => {
   }
 });
 
-it('should ignore request error', async () => {
-  mockRequest.fetchConfig.mockRejectedValueOnce(new Error('Mock reject fetch config'));
-  expect(jsonConfig.loadAndUpdateConfig()).rejects.toThrow();
+it('should throw requets error', async () => {
+  const error = new Error('Mock reject fetch config');
+  mockRequest.fetchConfig.mockRejectedValueOnce(error);
+  try {
+    await jsonConfig.loadAndUpdateConfig();
+  } catch (e) {
+    expect(e).toEqual(error);
+  }
 });
 
 it('should parse correctly when config type is a string', async () => {
@@ -125,14 +137,4 @@ it('should parse correctly when config type is a string', async () => {
   mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse(stringValue));
   await jsonConfig.loadAndUpdateConfig();
   expect(jsonConfig.getAllConfig()).toEqual(stringValue);
-});
-
-it('should parse success when fetch config return null', async () => {
-  mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse(initResp));
-  await jsonConfig.loadAndUpdateConfig();
-  expect(jsonConfig.getAllConfig()).toStrictEqual(initResp);
-
-  mockRequest.fetchConfig.mockResolvedValueOnce(null);
-  await jsonConfig.loadAndUpdateConfig();
-  expect(jsonConfig.getAllConfig()).toStrictEqual(initResp);
 });

@@ -1,5 +1,5 @@
 import { ConfigChange } from '../lib/config_change';
-import { PropertyChangeType } from '../lib/property_change_types';
+import { PropertyChangeType } from '../lib/constants';
 
 const configChange = new ConfigChange('application', 'key', 'oldValue', 'newValue', PropertyChangeType.MODIFIED);
 
