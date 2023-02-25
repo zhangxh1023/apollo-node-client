@@ -19,7 +19,7 @@ export class PlainConfig extends Config implements ConfigInterface {
     return this.configs;
   }
 
-  public getProperty(_: string, defaultValue?: string): undefined | string {
+  public getProperty(_?: string, defaultValue?: string): undefined | string {
     if (this.configs !== undefined) {
       return this.configs;
     }

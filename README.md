@@ -29,7 +29,7 @@ const service = new ConfigService({
 const config = await service.getAppConfig();
 config.getAllConfig();                                          // Map(1) { 'mysql.user' => 'root' }
 console.log(config.getProperty('mysql.user'));                  // root
-console.log(config.getProperty('mysql.missing'), 'default');    // default
+console.log(config.getProperty('mysql.missing', 'default'));    // default
 ```
 
 ### 获取 `properties` 格式 `namespace` 的配置
@@ -37,7 +37,7 @@ console.log(config.getProperty('mysql.missing'), 'default');    // default
 const config = await service.getConfig('application');
 config.getAllConfig();                                          // Map(1) { 'mysql.user' => 'root' }
 console.log(config.getProperty('mysql.user'));                  // root
-console.log(config.getProperty('mysql.missing'), 'default');    // default
+console.log(config.getProperty('mysql.missing', 'default'));    // default
 ```
 
 ### 获取 `json` 格式 `namespace` 的配置
@@ -45,14 +45,15 @@ console.log(config.getProperty('mysql.missing'), 'default');    // default
 const config = await service.getConfig('config.json');
 config.getAllConfig();                                          // { mysql: { user: 'root' } }
 console.log(config.getProperty('mysql.user'));                  // root
-console.log(config.getProperty('mysql.missing'), 'default');    // default
+console.log(config.getProperty('mysql.missing', 'default'));    // default
 ```
 
 ### 获取 `xml/yml/yaml/txt` 格式 `namespace` 的配置
 ```javascript
 const config = await service.getConfig('config.txt');
 config.getAllConfig();                                          // txt config
-console.log(config.getProperty(''));                            // txt config
+console.log(config.getProperty('', 'default'));                 // txt config
+console.log(config.getProperty());                              // txt config
 ```
 
 ### 指定灰度发布的服务 `ip`
@@ -60,7 +61,7 @@ console.log(config.getProperty(''));                            // txt config
 const config = await service.getConfig('application', '192.168.3.4');
 config.getAllConfig();                                          // Map(1) { 'mysql.user' => 'root' }
 console.log(config.getProperty('mysql.user'));                  // root
-console.log(config.getProperty('mysql.missing'), 'default');    // default
+console.log(config.getProperty('mysql.missing', 'default'));    // default
 ```
 
 ### 监听配置变化事件
