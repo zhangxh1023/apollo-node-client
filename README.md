@@ -1,7 +1,9 @@
 # apollo-node-client
 Node.js Client for [Apollo](https://github.com/ctripcorp/apollo)
 
-## install
+> **v2.0+** supports both CommonJS and ESM. 1.x only supports CommonJS.
+
+## Install
 ```bash
 $ npm install apollo-node-client --save
 ```
@@ -11,11 +13,20 @@ $ npm install apollo-node-client --save
 
 ## Usage
 
-### 实例化 `ConfigService`
+### Create a `ConfigService`
 
+CommonJS:
 ```javascript
 const { ConfigService } = require('apollo-node-client');
+```
 
+ESM:
+```javascript
+import { ConfigService } from 'apollo-node-client';
+```
+
+Then create an instance:
+```javascript
 const service = new ConfigService({
   configServerUrl: 'http://localhost:8080/',
   appId: 'SampleApp',
@@ -24,7 +35,7 @@ const service = new ConfigService({
 });
 ```
 
-### 获取默认 `namespace` 的配置（`application`）
+### Get the default `namespace` config (`application`)
 ```javascript
 const config = await service.getAppConfig();
 config.getAllConfig();                                          // Map(1) { 'mysql.user' => 'root' }
@@ -32,7 +43,7 @@ console.log(config.getProperty('mysql.user'));                  // root
 console.log(config.getProperty('mysql.missing', 'default'));    // default
 ```
 
-### 获取 `properties` 格式 `namespace` 的配置
+### Get `properties` format `namespace` config
 ```javascript
 const config = await service.getConfig('application');
 config.getAllConfig();                                          // Map(1) { 'mysql.user' => 'root' }
@@ -40,7 +51,7 @@ console.log(config.getProperty('mysql.user'));                  // root
 console.log(config.getProperty('mysql.missing', 'default'));    // default
 ```
 
-### 获取 `json` 格式 `namespace` 的配置
+### Get `json` format `namespace` config
 ```javascript
 const config = await service.getConfig('config.json');
 config.getAllConfig();                                          // { mysql: { user: 'root' } }
@@ -48,7 +59,7 @@ console.log(config.getProperty('mysql.user'));                  // root
 console.log(config.getProperty('mysql.missing', 'default'));    // default
 ```
 
-### 获取 `xml/yml/yaml/txt` 格式 `namespace` 的配置
+### Get `xml/yml/yaml/txt` format `namespace` config
 ```javascript
 const config = await service.getConfig('config.txt');
 config.getAllConfig();                                          // txt config
@@ -56,7 +67,7 @@ console.log(config.getProperty('', 'default'));                 // txt config
 console.log(config.getProperty());                              // txt config
 ```
 
-### 指定灰度发布的服务 `ip`
+### Specify a canary release server `ip`
 ```javascript
 const config = await service.getConfig('application', '192.168.3.4');
 config.getAllConfig();                                          // Map(1) { 'mysql.user' => 'root' }
@@ -64,7 +75,7 @@ console.log(config.getProperty('mysql.user'));                  // root
 console.log(config.getProperty('mysql.missing', 'default'));    // default
 ```
 
-### 监听配置变化事件
+### Listen for config change events
 ```javascript
 config.addChangeListener((changeEvent) => {
   for (const key of changeEvent.changedKeys()) {
@@ -86,21 +97,21 @@ config.addChangeListener((changeEvent) => {
 
 - new ConfigService( options )
   - `options` _\<Object>_
-    - `configServerUrl` _\<string>_ Apollo 配置服务的地址
-    - `appId` _\<string>_ 应用的 appId
-    - `[clusterName]` _\<string>_ 集群名
-    - `[secret]` _\<string>_ 服务端密钥 access key
+    - `configServerUrl` _\<string>_ Apollo config server URL
+    - `appId` _\<string>_ Application ID
+    - `[clusterName]` _\<string>_ Cluster name
+    - `[secret]` _\<string>_ Access key secret
   
   - Returns: _ConfigService_
 
 - configService.getAppConfig( [ ip ] )
-  - `[ip]` _\<string>_ 应用部署的机器ip
+  - `[ip]` _\<string>_ Server IP for canary release
 
-  - Returns: _Promise\<PropertiesConfig>_ 默认的 `namespace` 为 `application`
+  - Returns: _Promise\<PropertiesConfig>_ Default `namespace` is `application`
 
 - configService.getConfig( namespaceName, [ ip ] )
-  - `namespaceName` _\<string>_ Namespace的名字，以后缀名判断是什么类型格式的 `Config`。如果没有后缀名，默认为 `properties`，目前支持 `.json`，`.properties`，`.xml`，`.yml`， `.yaml`，`.txt`
-  - `[ip]` _\<string>_ 应用部署的机器ip
+  - `namespaceName` _\<string>_ Namespace name. The config format is determined by the file extension. Defaults to `properties` if no extension. Supports `.json`, `.properties`, `.xml`, `.yml`, `.yaml`, `.txt`
+  - `[ip]` _\<string>_ Server IP for canary release
 
   - Returns: _Promise\<PropertiesConfig | JSONConfig | PlainConfig>_
 
@@ -113,13 +124,13 @@ config.addChangeListener((changeEvent) => {
   - Returns: _Map\<string, string>_
 
 - propertiesConfig.getProperty( key, [ defaultValue ] )
-  - `key` _\<string>_ 要获取的配置的 `key`
-  - `[defaultValue]` _\<string>_ 默认值，当传入的 `key` 不存在时，会返回 `defaultValue`
+  - `key` _\<string>_ Config key to retrieve
+  - `[defaultValue]` _\<string>_ Default value returned when the key does not exist
 
   - Returns: _undefined | string_
 
 - propertiesConfig.addChangeListener( handle )
-  - `handle` _( changeEvent: ConfigChangeEvent\<string> ) => void_ 监听配置变化事件的回调函数
+  - `handle` _( changeEvent: ConfigChangeEvent\<string> ) => void_ Callback for config change events
 
   - Returns: _void_
 
@@ -132,13 +143,13 @@ config.addChangeListener((changeEvent) => {
   - Returns: _JSONValueType_
 
 - jsonConfig.getProperty( key, [ defaultValue ] )
-  - `key` _\<string>_ 要获取的配置的 `key`
-  - `[defaultValue]` _\<string>_ 默认值，当传入的 `key` 不存在时，会返回 `defaultValue`
+  - `key` _\<string>_ Config key to retrieve
+  - `[defaultValue]` _\<string>_ Default value returned when the key does not exist
 
   - Returns: _undefined | JSONValueType_
 
 - jsonConfig.addChangeListener( handle )
-  - `handle` _( changeEvent: ConfigChangeEvent\<JSONValueType> ) => void_ 监听配置变化事件的回调函数
+  - `handle` _( changeEvent: ConfigChangeEvent\<JSONValueType> ) => void_ Callback for config change events
 
   - Returns: _void_
 
@@ -151,8 +162,8 @@ config.addChangeListener((changeEvent) => {
   - Returns: _string_
 
 - plainConfig.getProperty( key, [ defaultValue ] )
-  - `key` _\<string>_ 兼容其他类型的 _Config_，不做校验，传入任意 `key` 都会返回整个配置文本内容
-  - `[defaultValue]` _\<string>_ 默认值，当配置不存在时，会返回 `defaultValue`
+  - `key` _\<string>_ Compatible with other config types. Any key returns the entire config text
+  - `[defaultValue]` _\<string>_ Default value returned when the config does not exist
 
   - Returns: _undefined | string_
 
@@ -184,7 +195,7 @@ config.addChangeListener((changeEvent) => {
 
   - Returns: _string_
 
-- configChange.getOldValues()
+- configChange.getOldValue()
 
   - Returns: _undefined | T_
 
