@@ -1,8 +1,8 @@
-import { NAMESPACE_APPLICATION, CLUSTER_NAME_DEFAULT } from './constants';
-import { ConfigManager } from './config_manager';
-import { PropertiesConfig } from './properties_config';
-import { JSONConfig } from './json_config';
-import { PlainConfig } from './plain_config';
+import { NAMESPACE_APPLICATION, CLUSTER_NAME_DEFAULT } from './constants.js';
+import { ConfigManager } from './config_manager.js';
+import { PropertiesConfig } from './properties_config.js';
+import { JSONConfig } from './json_config.js';
+import { PlainConfig } from './plain_config.js';
 
 export class ConfigService {
 

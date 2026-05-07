@@ -1,4 +1,4 @@
-import { ConfigChange } from './config_change';
+import { ConfigChange } from './config_change.js';
 
 export  class ConfigChangeEvent<T> {
   constructor(

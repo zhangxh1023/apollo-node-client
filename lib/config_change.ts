@@ -1,4 +1,4 @@
-import { PropertyChangeType } from './constants';
+import { PropertyChangeType } from './constants.js';
 
 
 export class ConfigChange<T> {

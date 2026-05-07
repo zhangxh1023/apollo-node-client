@@ -1,12 +1,25 @@
 {
   "name": "apollo-node-client",
-  "version": "1.4.3",
+  "version": "2.0.2",
   "description": "Node.js Client for Apollo",
   "author": "zhangxh1023",
   "email": "zhangxh1023@gmail.com",
   "url": "https://github.com/zhangxh1023/apollo-node-client",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "typings": "./dist/cjs/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
+    }
+  },
   "repository": {
     "type": "git",
     "url": "git@github.com:zhangxh1023/apollo-node-client.git"
@@ -21,7 +34,9 @@
     "ctrip apollo client"
   ],
   "scripts": {
-    "build": "tsc --sourceMap false -p tsconfig.json",
+    "build": "npm run build:cjs && npm run build:esm",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build:esm": "tsc -p tsconfig.esm.json",
     "clean": "rm -rf dist coverage",
     "lint": "eslint --ext .ts .",
     "fix": "eslint --fix --ext .ts .",

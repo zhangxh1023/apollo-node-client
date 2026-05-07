@@ -1,8 +1,8 @@
-import { EventEmitter } from 'stream';
-import { Access, AuthHeader } from './access';
-import { NOTIFICATION_ID_PLACEHOLDER } from './constants';
-import { ConfigOptions } from './types';
-import { Request } from './request';
+import { EventEmitter } from 'events';
+import { Access, AuthHeader } from './access.js';
+import { NOTIFICATION_ID_PLACEHOLDER } from './constants.js';
+import { ConfigOptions } from './types.js';
+import { Request } from './request.js';
 
 export abstract class Config extends EventEmitter {
 

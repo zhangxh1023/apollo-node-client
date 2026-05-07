@@ -1,6 +1,6 @@
 import fetch, { HeadersInit } from 'node-fetch';
 import { stringify } from 'query-string';
-import { ConfigInterface } from './configInterface';
+import { ConfigInterface } from './configInterface.js';
 
 export type ConfigUrlOptions = {
   configServerUrl: string;

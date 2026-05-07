@@ -1,4 +1,4 @@
-import { ConfigChangeEvent } from './config_change_event';
+import { ConfigChangeEvent } from './config_change_event.js';
 
 export interface ConfigInterface {
 

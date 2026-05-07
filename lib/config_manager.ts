@@ -1,9 +1,9 @@
-import { PropertiesConfig } from './properties_config';
-import { CLUSTER_NAMESPACE_SEPARATOR, ConfigTypes } from './constants';
-import { JSONConfig } from './json_config';
-import { Access, AuthHeader } from './access';
-import { Request } from './request';
-import { PlainConfig } from './plain_config';
+import { PropertiesConfig } from './properties_config.js';
+import { CLUSTER_NAMESPACE_SEPARATOR, ConfigTypes } from './constants.js';
+import { JSONConfig } from './json_config.js';
+import { Access, AuthHeader } from './access.js';
+import { Request } from './request.js';
+import { PlainConfig } from './plain_config.js';
 
 export type ConfigManagerOptions = {
   configServerUrl: string;

@@ -1,11 +1,11 @@
-import { AuthHeader } from './access';
-import { Config } from './config';
-import { ConfigInterface } from './configInterface';
-import { ConfigChangeEvent } from './config_change_event';
-import { ConfigContentType, ConfigOptions } from './types';
-import { Request } from './request';
-import { CHANGE_EVENT_NAME, PropertyChangeType } from './constants';
-import { ConfigChange } from './config_change';
+import { AuthHeader } from './access.js';
+import { Config } from './config.js';
+import { ConfigInterface } from './configInterface.js';
+import { ConfigChangeEvent } from './config_change_event.js';
+import { ConfigContentType, ConfigOptions } from './types.js';
+import { Request } from './request.js';
+import { CHANGE_EVENT_NAME, PropertyChangeType } from './constants.js';
+import { ConfigChange } from './config_change.js';
 
 export class PlainConfig extends Config implements ConfigInterface {
 
