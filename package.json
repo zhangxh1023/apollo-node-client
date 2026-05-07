@@ -1,6 +1,6 @@
 {
   "name": "apollo-node-client",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "Node.js Client for Apollo",
   "author": "zhangxh1023",
   "email": "zhangxh1023@gmail.com",
