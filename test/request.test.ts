@@ -1,4 +1,4 @@
-import { Request } from '../lib/request';
+import { ConfigUrlOptions, NotificationsUrlOptions, Request } from '../lib/request';
 import http from 'http';
 import { URL } from 'url';
 import { PropertiesConfig } from '../lib/properties_config';
@@ -9,7 +9,7 @@ const releaseKey = '20170430092936-dee2d58e74515ff3';
 const ip = '0.0.0.1';
 const label = 'gray';
 const dataCenter = 'shanghai';
-const configServerUrl = 'http://localhost:3000/';
+let configServerUrl = 'http://127.0.0.1:3000/';
 const appId = 'SampleApp';
 const clusterName = 'default';
 const namespaceName1 = 'test';
@@ -42,19 +42,19 @@ const fetchNotificationsResp = [
   }
 ];
 
-const configOptions = {
+const getConfigOptions = (): ConfigUrlOptions => ({
   configServerUrl,
   appId,
   clusterName,
   namespaceName: namespaceName1,
-};
-
-const simpleConfigUrl = Request.formatConfigUrl({
-  ...configOptions
 });
 
-const paramConfigUrl = Request.formatConfigUrl({
-  ...configOptions,
+const formatSimpleConfigUrl = (): string => Request.formatConfigUrl({
+  ...getConfigOptions()
+});
+
+const formatParamConfigUrl = (): string => Request.formatConfigUrl({
+  ...getConfigOptions(),
   releaseKey,
   ip,
   label,
@@ -62,35 +62,39 @@ const paramConfigUrl = Request.formatConfigUrl({
   messages: notificationMessages,
 });
 
-const encodedConfigUrl = Request.formatConfigUrl({
-  ...configOptions,
+const formatEncodedConfigUrl = (): string => Request.formatConfigUrl({
+  ...getConfigOptions(),
   appId: 'Sample App',
   namespaceName: 'test/namespace',
 });
 
-const notificationOptions = {
+const getNotificationOptions = (): NotificationsUrlOptions => ({
   configServerUrl,
   appId,
   clusterName,
-};
+});
 
 const propertiesConfig = new PropertiesConfig({
   namespaceName: namespaceName1,
-  ...notificationOptions
+  configServerUrl,
+  appId,
+  clusterName,
 });
 
 const jsonConfig = new JSONConfig({
   namespaceName: namespaceName2,
-  ...notificationOptions
+  configServerUrl,
+  appId,
+  clusterName,
 });
 
 const configsMap = new Map();
 configsMap.set(namespaceName1, propertiesConfig);
 configsMap.set(namespaceName2, jsonConfig);
 
-const simpleNotificationUrl = Request.formatNotificationsUrl(notificationOptions, new Map());
+const formatSimpleNotificationUrl = (): string => Request.formatNotificationsUrl(getNotificationOptions(), new Map());
 
-const paramNotificationUrl = Request.formatNotificationsUrl(notificationOptions, configsMap);
+const formatParamNotificationUrl = (): string => Request.formatNotificationsUrl(getNotificationOptions(), configsMap);
 
 let mockHttpHandle: (req: http.IncomingMessage, res: http.ServerResponse<http.IncomingMessage> & {
   req: http.IncomingMessage;
@@ -98,16 +102,20 @@ let mockHttpHandle: (req: http.IncomingMessage, res: http.ServerResponse<http.In
 
 let server: http.Server;
 beforeAll((): Promise<void> => {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
 
     const hostname = '127.0.0.1';
-    const port = 3000;
 
     server = http.createServer((req, res) => {
       mockHttpHandle(req, res);
     });
 
-    server.listen(port, hostname, () => {
+    server.on('error', reject);
+    server.listen(0, hostname, () => {
+      const address = server.address();
+      if (address && typeof address === 'object') {
+        configServerUrl = `http://${hostname}:${address.port}/`;
+      }
       resolve();
     });
   });
@@ -124,7 +132,7 @@ afterAll((): Promise<void> => {
 describe('test config request', () => {
   describe('test format url', () => {
     it('should format the correct simple config url', () => {
-      const simpleUrl = new URL(simpleConfigUrl);
+      const simpleUrl = new URL(formatSimpleConfigUrl());
       expect(simpleUrl.searchParams.get('releaseKey')).toBeNull();
       expect(simpleUrl.searchParams.get('ip')).toBeNull();
       expect(simpleUrl.search).toBe('');
@@ -132,7 +140,7 @@ describe('test config request', () => {
     });
 
     it('should format the correct config url with params', () => {
-      const paramUrl = new URL(paramConfigUrl);
+      const paramUrl = new URL(formatParamConfigUrl());
       expect(paramUrl.searchParams.get('releaseKey')).toBe(releaseKey);
       expect(paramUrl.searchParams.get('ip')).toBe(ip);
       expect(paramUrl.searchParams.get('label')).toBe(label);
@@ -142,8 +150,17 @@ describe('test config request', () => {
     });
 
     it('should encode config path segments', () => {
-      const encodedUrl = new URL(encodedConfigUrl);
+      const encodedUrl = new URL(formatEncodedConfigUrl());
       expect(encodedUrl.pathname).toBe('/configs/Sample%20App/default/test%2Fnamespace');
+    });
+
+    it('should encode query spaces as %20 for compatibility', () => {
+      const url = Request.formatConfigUrl({
+        ...getConfigOptions(),
+        label: 'gray release',
+      });
+      expect(url).toContain('label=gray%20release');
+      expect(url).not.toContain('gray+release');
     });
   });
 
@@ -154,7 +171,7 @@ describe('test config request', () => {
         res.setHeader('Content-Type', 'application/json;charset=UTF-8');
         res.end(JSON.stringify(fetchConfigResp));
       };
-      const resp = await Request.fetchConfig(paramConfigUrl);
+      const resp = await Request.fetchConfig(formatParamConfigUrl());
       expect(resp).toStrictEqual(fetchConfigResp);
     });
     it('should throw server error', async () => {
@@ -162,7 +179,7 @@ describe('test config request', () => {
         res.statusCode = 500;
         res.end(JSON.stringify(fetchConfigResp));
       };
-      await expect(Request.fetchConfig(paramConfigUrl)).rejects.toThrowErrorMatchingInlineSnapshot('"Http request error: 500, Internal Server Error"');
+      await expect(Request.fetchConfig(formatParamConfigUrl())).rejects.toThrowErrorMatchingInlineSnapshot('"Http request error: 500, Internal Server Error"');
     });
     it('should receive http headers', async () => {
       mockHttpHandle = (req, res): void => {
@@ -173,7 +190,14 @@ describe('test config request', () => {
       const headers = {
         header1: '1'
       };
-      await expect(Request.fetchConfig(paramConfigUrl, headers)).resolves.toStrictEqual(fetchConfigResp);
+      await expect(Request.fetchConfig(formatParamConfigUrl(), headers)).resolves.toStrictEqual(fetchConfigResp);
+    });
+    it('should include context when config response is invalid json', async () => {
+      mockHttpHandle = (req, res): void => {
+        res.statusCode = 200;
+        res.end('not json');
+      };
+      await expect(Request.fetchConfig(formatParamConfigUrl())).rejects.toThrow(/Http response parse error: 200, .*body: not json/);
     });
   });
 });
@@ -181,13 +205,13 @@ describe('test config request', () => {
 describe('test notification request', () => {
   describe('test format url', () => {
     it('should format the correct simple notification url', () => {
-      const simpleUrl = new URL(simpleNotificationUrl);
+      const simpleUrl = new URL(formatSimpleNotificationUrl());
       expect(simpleUrl.searchParams.get('notifications')).toBe('[]');
       expect(simpleUrl.origin + simpleUrl.pathname).toBe(`${configServerUrl}notifications/v2`);
     });
 
     it('should format the correct notification url with params', () => {
-      const paramUrl = new URL(paramNotificationUrl);
+      const paramUrl = new URL(formatParamNotificationUrl());
       expect(JSON.parse(paramUrl.searchParams.get('notifications') || '').sort())
         .toEqual([
           {
@@ -210,7 +234,7 @@ describe('test notification request', () => {
         res.setHeader('Content-Type', 'application/json;charset=UTF-8');
         res.end(JSON.stringify(fetchNotificationsResp));
       };
-      const resp = await Request.fetchNotifications(paramNotificationUrl);
+      const resp = await Request.fetchNotifications(formatParamNotificationUrl());
       expect(resp).toStrictEqual(fetchNotificationsResp);
     });
     it('should throw server error', async () => {
@@ -218,7 +242,7 @@ describe('test notification request', () => {
         res.statusCode = 500;
         res.end(JSON.stringify(fetchNotificationsResp));
       };
-      await expect(Request.fetchConfig(paramNotificationUrl)).rejects.toThrowErrorMatchingInlineSnapshot('"Http request error: 500, Internal Server Error"');
+      await expect(Request.fetchNotifications(formatParamNotificationUrl())).rejects.toThrowErrorMatchingInlineSnapshot('"Http request error: 500, Internal Server Error"');
     });
     it('should receive http headers', async () => {
       mockHttpHandle = (req, res): void => {
@@ -229,7 +253,14 @@ describe('test notification request', () => {
       const headers = {
         header1: '1'
       };
-      await expect(Request.fetchConfig(paramNotificationUrl, headers)).resolves.toStrictEqual(fetchNotificationsResp);
+      await expect(Request.fetchNotifications(formatParamNotificationUrl(), headers)).resolves.toStrictEqual(fetchNotificationsResp);
+    });
+    it('should include context when notification response is invalid json', async () => {
+      mockHttpHandle = (req, res): void => {
+        res.statusCode = 200;
+        res.end('not json');
+      };
+      await expect(Request.fetchNotifications(formatParamNotificationUrl())).rejects.toThrow(/Http response parse error: 200, .*body: not json/);
     });
   });
 });
@@ -269,5 +300,18 @@ describe('test incremental config helpers', () => {
       key1: 'value3',
       key3: '',
     });
+  });
+
+  it('should merge unsafe keys as own properties', () => {
+    const mergedConfigurations = Request.mergeConfigurationChanges({}, [
+      {
+        key: '__proto__',
+        changeType: 'ADDED',
+        newValue: 'polluted',
+      },
+    ]);
+
+    expect(Object.prototype.hasOwnProperty.call(mergedConfigurations, '__proto__')).toBeTruthy();
+    expect(({} as any).polluted).toBeUndefined();
   });
 });

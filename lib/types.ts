@@ -9,5 +9,5 @@ export type ConfigOptions = {
 }
 
 export type ConfigContentType = {
-  content: string;
+  content?: string;
 }

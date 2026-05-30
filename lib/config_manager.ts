@@ -21,6 +21,8 @@ type NamespacePair = {
 
 export class ConfigManager {
 
+  private static readonly NO_IP_CONFIGS_MAP_KEY = '<no-ip>';
+
   private LONG_POLL_RETRY_TIME = 1000;
 
   private MAX_LONG_POLL_RETRY_TIME = 16000;
@@ -30,6 +32,8 @@ export class ConfigManager {
   private configsMap: Map<string, PropertiesConfig | JSONConfig | PlainConfig> = new Map();
 
   private configsMapVersion = 0;
+
+  private closed = false;
 
   constructor(private readonly options: ConfigManagerOptions) {
     this.options = options;
@@ -56,7 +60,8 @@ export class ConfigManager {
     if (!type.namespaceName) {
       throw new Error('namespaceName can not be empty!');
     }
-    const mpKey = this.formatConfigsMapKey(type.namespaceName);
+    this.closed = false;
+    const mpKey = this.formatConfigsMapKey(type.namespaceName, ip);
     let config = this.configsMap.get(mpKey);
     if (!config) {
       if (type.type == ConfigTypes.PROPERTIES) {
@@ -78,7 +83,7 @@ export class ConfigManager {
 
       this.configsMapVersion = this.configsMapVersion % Number.MAX_SAFE_INTEGER + 1;
       const configsMapVersion = this.configsMapVersion;
-      const key = this.formatConfigsMapKey(config.getNamespaceName());
+      const key = this.formatConfigsMapKey(config.getNamespaceName(), ip);
       this.configsMap.set(key, config);
       const singleMap = new Map();
       singleMap.set(key, config);
@@ -94,10 +99,19 @@ export class ConfigManager {
     return config;
   }
 
-  public removeConfig(namespaceName: string): void {
+  public removeConfig(namespaceName: string, ip?: string): void {
     const type = this.getTypeByNamespaceName(namespaceName);
-    const mpKey = this.formatConfigsMapKey(type.namespaceName);
+    const mpKey = this.formatConfigsMapKey(type.namespaceName, ip);
     this.configsMap.delete(mpKey);
+    if (this.configsMap.size === 0) {
+      this.configsMapVersion = this.configsMapVersion % Number.MAX_SAFE_INTEGER + 1;
+    }
+  }
+
+  public close(): void {
+    this.closed = true;
+    this.configsMap.clear();
+    this.configsMapVersion = this.configsMapVersion % Number.MAX_SAFE_INTEGER + 1;
   }
 
   private async updateConfigs(configsMap: Map<string, PropertiesConfig | JSONConfig | PlainConfig>): Promise<void> {
@@ -112,9 +126,10 @@ export class ConfigManager {
 
     if (notification) {
       for (const item of notification) {
-        const key = this.formatConfigsMapKey(item.namespaceName);
-        const config = this.configsMap.get(key);
-        if (config) {
+        for (const config of configsMap.values()) {
+          if (config.getNamespaceName() !== item.namespaceName) {
+            continue;
+          }
           await config.loadAndUpdateConfig(item.notificationId);
           config.setNotificationId(item.notificationId);
         }
@@ -124,7 +139,7 @@ export class ConfigManager {
   }
 
   private async startLongPoll(configsMapVersion: number): Promise<void> {
-    if (configsMapVersion !== this.configsMapVersion) {
+    if (this.closed || configsMapVersion !== this.configsMapVersion) {
       return;
     }
     try {
@@ -139,15 +154,19 @@ export class ConfigManager {
       }
     }
 
-    if (this.configsMap.size > 0) {
+    if (!this.closed && this.configsMap.size > 0) {
       setImmediate(() => {
         this.startLongPoll(configsMapVersion);
       });
     }
   }
 
-  private formatConfigsMapKey(namespaceName: string): string {
-    return this.options.clusterName + CLUSTER_NAMESPACE_SEPARATOR + namespaceName;
+  private formatConfigsMapKey(namespaceName: string, ip?: string): string {
+    return [
+      this.options.clusterName,
+      namespaceName,
+      ip || ConfigManager.NO_IP_CONFIGS_MAP_KEY,
+    ].join(CLUSTER_NAMESPACE_SEPARATOR);
   }
 
   private sleep(time = 2000): Promise<void> {

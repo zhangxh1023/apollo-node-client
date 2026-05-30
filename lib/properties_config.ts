@@ -11,7 +11,7 @@ export type KVConfigContentType = {
   [key: string]: string;
 };
 
-export class PropertiesConfig extends Config implements ConfigInterface {
+export class PropertiesConfig extends Config implements ConfigInterface<string, Map<string, string>> {
 
   private configs: Map<string, string> = new Map();
 
@@ -28,7 +28,7 @@ export class PropertiesConfig extends Config implements ConfigInterface {
   }
 
   public getAllConfig(): Map<string, string> {
-    return this.configs;
+    return new Map(this.configs);
   }
 
   private setProperty(key: string, value: string): void {
@@ -39,7 +39,7 @@ export class PropertiesConfig extends Config implements ConfigInterface {
     return this.configs.delete(key);
   }
 
-  public addChangeListener(fn: (changeEvent: ConfigChangeEvent<string>) => void): PropertiesConfig {
+  public addChangeListener(fn: (changeEvent: ConfigChangeEvent<string>) => void): this {
     this.addListener(CHANGE_EVENT_NAME, fn);
     return this;
   }
@@ -92,7 +92,7 @@ export class PropertiesConfig extends Config implements ConfigInterface {
     const added: string[] = [];
     const deleted: string[] = [];
     const changed: string[] = [];
-    for (const key in newConfigs) {
+    for (const key of Object.keys(newConfigs)) {
       if (oldConfigs.has(key)) {
         if (oldConfigs.get(key) !== newConfigs[key]) {
           changed.push(key);

@@ -116,6 +116,37 @@ it('should apply incremental content response', async () => {
   expect(incrementalConfig.getAllConfig()).toBe('incremental config');
 });
 
+it('should apply incremental content deletion', async () => {
+  const incrementalConfig = new PlainConfig(configOptions);
+  mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse(initConfigs));
+  await incrementalConfig.loadAndUpdateConfig();
+
+  const handle = jest.fn();
+  incrementalConfig.addChangeListener(handle);
+  mockRequest.fetchConfig.mockResolvedValueOnce({
+    appId: 'SampleApp',
+    cluster: 'default',
+    namespaceName,
+    releaseKey: '20200203154031-1dc524aa9a4a5974',
+    configSyncType: 'INCREMENTAL_SYNC',
+    configurationChanges: [
+      {
+        key: 'content',
+        changeType: 'DELETED',
+      },
+    ],
+  });
+  await incrementalConfig.loadAndUpdateConfig();
+
+  expect(incrementalConfig.getAllConfig()).toBeUndefined();
+  expect(handle).toHaveBeenCalledTimes(1);
+  const changeEvent = handle.mock.calls[0][0] as ConfigChangeEvent<string>;
+  const change = changeEvent.getChange('');
+  expect(change?.getChangeType()).toBe(PropertyChangeType.DELETED);
+  expect(change?.getOldValue()).toBe(initConfigs);
+  expect(change?.getNewValue()).toBeUndefined();
+});
+
 it('should throw request error', async () => {
   const error = new Error('Mock reject fetch config');
   mockRequest.fetchConfig.mockRejectedValueOnce(error);

@@ -38,4 +38,11 @@ export class ConfigService {
   public getConfig(namespaceName: string, ip?: string): Promise<PropertiesConfig | JSONConfig | PlainConfig> {
     return this.configManager.getConfig(namespaceName, ip);
   }
+
+  /**
+   * stop long polling and release cached config instances
+   */
+  public close(): void {
+    this.configManager.close();
+  }
 }

@@ -9,15 +9,15 @@ import { ConfigContentType, ConfigOptions } from './types.js';
 
 export type JSONBaseType = string | number | boolean | null;
 
-export type JSONArrayType = JSONBaseType[];
+export type JSONArrayType = JSONValueType[];
 
 export type JSONType = {
-  [key: string]: JSONBaseType | JSONArrayType | JSONType;
+  [key: string]: JSONValueType;
 }
 
 export type JSONValueType = JSONBaseType | JSONArrayType | JSONType;
 
-export class JSONConfig extends Config implements ConfigInterface {
+export class JSONConfig extends Config implements ConfigInterface<JSONValueType, JSONValueType> {
 
   private configs: JSONValueType = Object.create(null);
 
@@ -28,17 +28,17 @@ export class JSONConfig extends Config implements ConfigInterface {
   }
 
   public getProperty(key: string, defaultValue?: JSONValueType): undefined | JSONValueType {
-    return this.getPropertyByJSONAndKey(this.configs, key, defaultValue);
+    const value = this.getPropertyByJSONAndKey(this.configs, key);
+    if (value !== undefined) {
+      return this.cloneJSONValue(value);
+    }
+    return defaultValue;
   }
 
   private getPropertyByJSONAndKey(configs: JSONValueType,
-    key: string, defaultValue?: JSONValueType): undefined | JSONValueType {
+    key: string): undefined | JSONValueType {
     const keySlice = key ? key.split('.') : [];
-    const value = this.getPropertyByJSONAndKeySlice(configs, keySlice);
-    if (value !== undefined) {
-      return value;
-    }
-    return defaultValue;
+    return this.getPropertyByJSONAndKeySlice(configs, keySlice);
   }
 
   private getPropertyByJSONAndKeySlice(JSONValue: undefined | JSONValueType, keySlice: string[]): undefined | JSONValueType {
@@ -53,14 +53,15 @@ export class JSONConfig extends Config implements ConfigInterface {
     if (Array.isArray(JSONValue)) return;
     const key = keySlice.shift();
     if (!key) return;
+    if (!Object.prototype.hasOwnProperty.call(JSONValue, key)) return;
     return this.getPropertyByJSONAndKeySlice(JSONValue[key], keySlice);
   }
 
   public getAllConfig(): JSONValueType {
-    return this.configs;
+    return this.cloneJSONValue(this.configs);
   }
 
-  public addChangeListener(fn: (changeEvent: ConfigChangeEvent<JSONValueType>) => void): JSONConfig {
+  public addChangeListener(fn: (changeEvent: ConfigChangeEvent<JSONValueType>) => void): this {
     this.addListener(CHANGE_EVENT_NAME, fn);
     return this;
   }
@@ -176,10 +177,11 @@ export class JSONConfig extends Config implements ConfigInterface {
     let configChangeEvent: undefined | ConfigChangeEvent<JSONValueType>;
     const configChanges: Map<string, ConfigChange<JSONValueType>> = new Map();
     for (const key of added) {
+      const newValue = this.getPropertyByJSONAndKey(newConfigs, key);
       const configChange = new ConfigChange(this.getNamespaceName(),
         key,
         undefined,
-        this.getPropertyByJSONAndKey(newConfigs, key),
+        newValue === undefined ? undefined : this.cloneJSONValue(newValue),
         PropertyChangeType.ADDED);
       configChanges.set(key, configChange);
     }
@@ -192,10 +194,11 @@ export class JSONConfig extends Config implements ConfigInterface {
       configChanges.set(key, configChange);
     }
     for (const key of changed) {
+      const newValue = this.getPropertyByJSONAndKey(newConfigs, key);
       const configChange = new ConfigChange(this.getNamespaceName(),
         key,
         this.getProperty(key),
-        this.getPropertyByJSONAndKey(newConfigs, key),
+        newValue === undefined ? undefined : this.cloneJSONValue(newValue),
         PropertyChangeType.MODIFIED);
       configChanges.set(key, configChange);
     }
@@ -205,6 +208,23 @@ export class JSONConfig extends Config implements ConfigInterface {
 
     this.configs = newConfigs;
     return configChangeEvent;
+  }
+
+  private cloneJSONValue(value: JSONValueType): JSONValueType {
+    if (value === null ||
+      typeof value === 'string' ||
+      typeof value === 'number' ||
+      typeof value === 'boolean') {
+      return value;
+    }
+    if (Array.isArray(value)) {
+      return value.map(item => this.cloneJSONValue(item));
+    }
+    const cloned: JSONType = {};
+    for (const key of Object.keys(value)) {
+      cloned[key] = this.cloneJSONValue(value[key]);
+    }
+    return cloned;
   }
 
 }

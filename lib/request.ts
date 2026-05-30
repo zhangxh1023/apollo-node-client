@@ -1,5 +1,4 @@
 import fetch, { HeadersInit } from 'node-fetch';
-import { stringify } from 'query-string';
 import { ConfigInterface } from './configInterface.js';
 
 export type ConfigUrlOptions = {
@@ -93,7 +92,7 @@ export class Request {
     if (status === 304) return null;
     if (status != 200) throw new Error(`Http request error: ${status}, ${response.statusText}`);
     if (!text) return null;
-    return JSON.parse(text);
+    return this.parseJSON<LoadConfigResp<T>>(url, status, text);
   }
 
   public static formatNotificationsUrl(options: NotificationsUrlOptions,
@@ -101,14 +100,22 @@ export class Request {
     const { configServerUrl, appId, clusterName } = options;
     const url = this.trimTrailingSlash(configServerUrl);
     const notifications: Notification[] = [];
+    const notificationMap: Map<string, number> = new Map();
     for (const config of configsMap.values()) {
-      const temp = {
-        namespaceName: config.getNamespaceName(),
-        notificationId: config.getNotificationId(),
-      };
-      notifications.push(temp);
+      const namespaceName = config.getNamespaceName();
+      const notificationId = config.getNotificationId();
+      const currentNotificationId = notificationMap.get(namespaceName);
+      if (currentNotificationId === undefined || notificationId < currentNotificationId) {
+        notificationMap.set(namespaceName, notificationId);
+      }
     }
-    const strParams = stringify({
+    for (const [namespaceName, notificationId] of notificationMap) {
+      notifications.push({
+        namespaceName,
+        notificationId,
+      });
+    }
+    const strParams = this.stringify({
       appId: appId,
       cluster: clusterName,
       notifications: JSON.stringify(notifications),
@@ -123,7 +130,7 @@ export class Request {
     if (status === 304) return null;
     if (status != 200) throw new Error(`Http request error: ${status}, ${response.statusText}`);
     if (!text) return null;
-    return JSON.parse(text);
+    return this.parseJSON<Notification[]>(url, status, text);
   }
 
   public static isIncrementalConfig<T>(loadConfigResp: LoadConfigResp<T>): boolean {
@@ -136,8 +143,13 @@ export class Request {
   public static mergeConfigurationChanges(configurations: { [key: string]: string },
     configurationChanges: ConfigurationChange[] = []): { [key: string]: string } {
     const mergedConfigurations: { [key: string]: string } = {};
-    for (const key in configurations) {
-      mergedConfigurations[key] = configurations[key];
+    for (const key of Object.keys(configurations)) {
+      Object.defineProperty(mergedConfigurations, key, {
+        value: configurations[key],
+        writable: true,
+        enumerable: true,
+        configurable: true,
+      });
     }
     for (const configurationChange of configurationChanges) {
       const key = configurationChange.key !== undefined ? configurationChange.key : configurationChange.propertyName;
@@ -149,7 +161,12 @@ export class Request {
       if (normalizedChangeType === 'DELETED' || normalizedChangeType === 'DELETE') {
         delete mergedConfigurations[key];
       } else if (configurationChange.newValue !== undefined) {
-        mergedConfigurations[key] = configurationChange.newValue;
+        Object.defineProperty(mergedConfigurations, key, {
+          value: configurationChange.newValue,
+          writable: true,
+          enumerable: true,
+          configurable: true,
+        });
       }
     }
     return mergedConfigurations;
@@ -160,7 +177,24 @@ export class Request {
   }
 
   private static appendQuery(url: string, params: ConfigQueryParam): string {
-    const strParams = stringify(params);
+    const strParams = this.stringify(params);
     return strParams ? `${url}?${strParams}` : url;
+  }
+
+  private static stringify(params: { [key: string]: string | undefined }): string {
+    return Object.keys(params)
+      .filter(key => params[key] !== undefined)
+      .sort()
+      .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key] as string)}`)
+      .join('&');
+  }
+
+  private static parseJSON<T>(url: string, status: number, text: string): T {
+    try {
+      return JSON.parse(text);
+    } catch (error) {
+      const responseSnippet = text.length > 200 ? `${text.substring(0, 200)}...` : text;
+      throw new Error(`Http response parse error: ${status}, ${url}, ${error}, body: ${responseSnippet}`);
+    }
   }
 }

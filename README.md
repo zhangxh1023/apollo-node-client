@@ -74,6 +74,8 @@ config.getAllConfig();                                          // Map(1) { 'mys
 console.log(config.getProperty('mysql.user'));                  // root
 console.log(config.getProperty('mysql.missing', 'default'));    // default
 ```
+Configs are cached by `namespace` and `ip`. Calling `getConfig('application', '192.168.3.4')`
+and `getConfig('application', '192.168.3.5')` returns different config instances.
 
 ### Specify `label` or `dataCenter`
 ```javascript
@@ -102,6 +104,13 @@ config.addChangeListener((changeEvent) => {
 });
 ```
 
+### Stop long polling
+```javascript
+service.close();
+```
+`close()` stops background long polling and clears cached config instances held by the service.
+Existing config objects can still read their last loaded values, but they will no longer update.
+
 ## API
 
 ### Class: ConfigService
@@ -128,13 +137,22 @@ config.addChangeListener((changeEvent) => {
 
   - Returns: _Promise\<PropertiesConfig | JSONConfig | PlainConfig>_
 
+- configService.close()
+
+  - Stops long polling and clears cached config instances.
+
+  - Returns: _void_
+
+> Initial load errors are logged and the config instance is still returned. The service keeps
+> long polling, so later successful Apollo responses can still populate or update the config.
+
 ---
 
 ### Class: PropertiesConfig
 
 - propertiesConfig.getAllConfig()
 
-  - Returns: _Map\<string, string>_
+  - Returns: _Map\<string, string>_ A copy of the current configs.
 
 - propertiesConfig.getProperty( key, [ defaultValue ] )
   - `key` _\<string>_ Config key to retrieve
@@ -145,7 +163,7 @@ config.addChangeListener((changeEvent) => {
 - propertiesConfig.addChangeListener( handle )
   - `handle` _( changeEvent: ConfigChangeEvent\<string> ) => void_ Callback for config change events
 
-  - Returns: _void_
+  - Returns: _PropertiesConfig_
 
 ---
 
@@ -153,18 +171,22 @@ config.addChangeListener((changeEvent) => {
 
 - jsonConfig.getAllConfig()
 
-  - Returns: _JSONValueType_
+  - Returns: _JSONValueType_ A copy of the current configs.
 
 - jsonConfig.getProperty( key, [ defaultValue ] )
   - `key` _\<string>_ Config key to retrieve
-  - `[defaultValue]` _\<string>_ Default value returned when the key does not exist
+  - `[defaultValue]` _\<JSONValueType>_ Default value returned when the key does not exist
 
   - Returns: _undefined | JSONValueType_
+
+  - Dot-separated keys are used for object traversal, for example `mysql.user`. Array indexes
+    are not traversed. Invalid JSON namespace content is returned as a plain string for backward
+    compatibility.
 
 - jsonConfig.addChangeListener( handle )
   - `handle` _( changeEvent: ConfigChangeEvent\<JSONValueType> ) => void_ Callback for config change events
 
-  - Returns: _void_
+  - Returns: _JSONConfig_
 
 ---
 
@@ -175,10 +197,15 @@ config.addChangeListener((changeEvent) => {
   - Returns: _string_
 
 - plainConfig.getProperty( key, [ defaultValue ] )
-  - `key` _\<string>_ Compatible with other config types. Any key returns the entire config text
+  - `[key]` _\<string>_ Compatible with other config types. Any key returns the entire config text
   - `[defaultValue]` _\<string>_ Default value returned when the config does not exist
 
   - Returns: _undefined | string_
+
+- plainConfig.addChangeListener( handle )
+  - `handle` _( changeEvent: ConfigChangeEvent\<string> ) => void_ Callback for config change events
+
+  - Returns: _PlainConfig_
 
 ---
 

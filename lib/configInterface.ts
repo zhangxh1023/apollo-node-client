@@ -1,10 +1,10 @@
 import { ConfigChangeEvent } from './config_change_event.js';
 
-export interface ConfigInterface {
+export interface ConfigInterface<TValue = unknown, TAllConfig = unknown> {
 
-  getAllConfig(): unknown;
+  getAllConfig(): TAllConfig;
 
-  getProperty(key: string, defaultValue?: unknown): unknown;
+  getProperty(key: string, defaultValue?: TValue): undefined | TValue;
 
   getNamespaceName(): string;
 
@@ -12,5 +12,5 @@ export interface ConfigInterface {
 
   loadAndUpdateConfig(notificationId?: number): Promise<void>;
 
-  addChangeListener(fn: (changeEvent: ConfigChangeEvent<unknown>) => void): unknown;
+  addChangeListener(fn: (changeEvent: ConfigChangeEvent<TValue>) => void): this;
 }

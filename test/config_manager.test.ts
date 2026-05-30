@@ -30,6 +30,7 @@ afterAll(() => {
   configManager.removeConfig('config.txt');
   configManager.removeConfig('errorConfig');
   configManager.removeConfig('errorConfig2');
+  configManager.close();
 });
 
 describe('properties config', () => {
@@ -65,12 +66,71 @@ describe('properties config', () => {
     expect(propertiesConfig2.getNamespaceName()).toEqual('config2');
     expect(propertiesConfig2 instanceof PropertiesConfig).toBeTruthy();
 
-    expect(configManager.getConfig('.properties')).rejects.toThrowError('empty');
+    await expect(configManager.getConfig('.properties')).rejects.toThrowError('empty');
   });
 
   it('should get correct configs', () => {
     expect(propertiesConfig1.getAllConfig()).toStrictEqual(new Map(Object.entries(configs)));
     expect(propertiesConfig2.getAllConfig()).toStrictEqual(new Map(Object.entries(configs)));
+  });
+});
+
+describe('cache and lifecycle', () => {
+  const configs = {
+    key: 'value',
+  };
+
+  const mockOnce = (namespaceName: string): void => {
+    mockRequest.fetchNotifications.mockResolvedValueOnce(mockNotifications(namespaceName, 1));
+    mockRequest.fetchConfig.mockResolvedValueOnce({
+      'appId': 'SampleApp',
+      'cluster': 'default',
+      namespaceName,
+      'configurations': configs,
+      'releaseKey': '20200203154030-1dc524aa9a4a5974'
+    });
+  };
+
+  it('should cache configs by namespace and ip', async () => {
+    const manager = new ConfigManager({
+      configServerUrl: 'http://localhost:8080/',
+      appId: 'SampleApp',
+      clusterName: 'default',
+    });
+    const namespaceName = 'ipConfig';
+    try {
+      mockOnce(namespaceName);
+      const ipConfig1 = await manager.getConfig(namespaceName, '192.168.1.1');
+      const sameIpConfig = await manager.getConfig(namespaceName, '192.168.1.1');
+      expect(sameIpConfig).toBe(ipConfig1);
+
+      mockOnce(namespaceName);
+      const ipConfig2 = await manager.getConfig(namespaceName, '192.168.1.2');
+      expect(ipConfig2).not.toBe(ipConfig1);
+    } finally {
+      manager.close();
+    }
+  });
+
+  it('should stop scheduled long polling after close', async () => {
+    const manager = new ConfigManager({
+      configServerUrl: 'http://localhost:8080/',
+      appId: 'SampleApp',
+      clusterName: 'default',
+    });
+    const namespaceName = 'closeConfig';
+    const updateSpy = jest.spyOn(manager as any, 'updateConfigs');
+    try {
+      mockOnce(namespaceName);
+      await manager.getConfig(namespaceName);
+      manager.close();
+      manager.close();
+      await new Promise(resolve => setImmediate(resolve));
+      expect(updateSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      manager.close();
+      updateSpy.mockRestore();
+    }
   });
 });
 
@@ -198,10 +258,10 @@ describe('notification id loading', () => {
 
 it('should ignore the request error', async () => {
   mockRequest.fetchNotifications.mockRejectedValueOnce(new Error('Mock reject fetch notifications'));
-  expect(configManager.getConfig('errorConfig')).resolves.not.toThrowError();
+  await expect(configManager.getConfig('errorConfig')).resolves.not.toThrowError();
 
   const namespaceName2 = 'errorConfig2';
   mockRequest.fetchNotifications.mockResolvedValueOnce(mockNotifications(namespaceName2, Number.MAX_VALUE));
   mockRequest.fetchConfig.mockRejectedValueOnce(new Error('Mock reject fetch config'));
-  expect(configManager.getConfig(namespaceName2)).resolves.not.toThrowError();
+  await expect(configManager.getConfig(namespaceName2)).resolves.not.toThrowError();
 });

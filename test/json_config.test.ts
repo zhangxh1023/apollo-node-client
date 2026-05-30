@@ -68,6 +68,34 @@ it('should return the correct value and default value', () => {
   expect(value6).toStrictEqual(initConfigs.objKey.arrKey);
 });
 
+it('should support object arrays and nested arrays in json values', async () => {
+  const recursiveConfig = new JSONConfig(configOptions);
+  const recursiveConfigs: JSONValueType = {
+    users: [{ name: 'alice' }],
+    matrix: [[1, 2], [3, 4]],
+  };
+  mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse(recursiveConfigs));
+  await recursiveConfig.loadAndUpdateConfig();
+  expect(recursiveConfig.getProperty('users')).toStrictEqual([{ name: 'alice' }]);
+  expect(recursiveConfig.getProperty('matrix')).toStrictEqual([[1, 2], [3, 4]]);
+});
+
+it('should only read own json properties', () => {
+  expect(jsonConfig.getProperty('constructor', 'default')).toBe('default');
+  expect(jsonConfig.getProperty('toString', 'default')).toBe('default');
+  expect(jsonConfig.getProperty('__proto__', 'default')).toBe('default');
+});
+
+it('should return copies for object and array configs', () => {
+  const allConfig = jsonConfig.getAllConfig() as any;
+  allConfig.objKey.arrKey.push(4);
+  expect(jsonConfig.getProperty('objKey.arrKey')).toStrictEqual([1, 2, 3]);
+
+  const objValue = jsonConfig.getProperty('objKey') as any;
+  objValue.arrKey.push(4);
+  expect(jsonConfig.getProperty('objKey.arrKey')).toStrictEqual([1, 2, 3]);
+});
+
 it('should get the correct changeEvent', (done: jest.DoneCallback) => {
   try {
     const handle = (changeEvent: ConfigChangeEvent<any>): void => {

@@ -7,7 +7,12 @@ import { LoadConfigResp, Request } from './request.js';
 import { CHANGE_EVENT_NAME, PropertyChangeType } from './constants.js';
 import { ConfigChange } from './config_change.js';
 
-export class PlainConfig extends Config implements ConfigInterface {
+type ResolvedContent = {
+  resolved: boolean;
+  content?: string;
+};
+
+export class PlainConfig extends Config implements ConfigInterface<string, undefined | string> {
 
   private configs: undefined | string;
 
@@ -29,9 +34,9 @@ export class PlainConfig extends Config implements ConfigInterface {
   public async _loadAndUpdateConfig(url: string, headers: AuthHeader | undefined): Promise<void> {
     const loadConfigResp = await Request.fetchConfig<ConfigContentType>(url, headers);
     if (loadConfigResp) {
-      const content = this.resolveContent(loadConfigResp);
-      if (content !== undefined) {
-        const configChangeEvent = this.updateConfigAndCreateChangeEvent(this.configs, content);
+      const resolvedContent = this.resolveContent(loadConfigResp);
+      if (resolvedContent.resolved) {
+        const configChangeEvent = this.updateConfigAndCreateChangeEvent(this.configs, resolvedContent.content);
         if (configChangeEvent) {
           this.emit(CHANGE_EVENT_NAME, configChangeEvent);
         }
@@ -40,25 +45,34 @@ export class PlainConfig extends Config implements ConfigInterface {
     }
   }
 
-  private resolveContent(loadConfigResp: LoadConfigResp<ConfigContentType>): undefined | string {
+  private resolveContent(loadConfigResp: LoadConfigResp<ConfigContentType>): ResolvedContent {
     if (loadConfigResp.configurations) {
-      return loadConfigResp.configurations.content;
+      return {
+        resolved: true,
+        content: loadConfigResp.configurations.content,
+      };
     }
     if (Request.isIncrementalConfig(loadConfigResp)) {
       const configurations: ConfigContentType = Object.create(null);
       if (this.configs !== undefined) {
         configurations.content = this.configs;
       }
-      return Request.mergeConfigurationChanges(configurations, loadConfigResp.configurationChanges).content;
+      return {
+        resolved: true,
+        content: Request.mergeConfigurationChanges(configurations, loadConfigResp.configurationChanges).content,
+      };
     }
+    return {
+      resolved: false,
+    };
   }
 
-  public addChangeListener(fn: (changeEvent: ConfigChangeEvent<string>) => void): PlainConfig {
+  public addChangeListener(fn: (changeEvent: ConfigChangeEvent<string>) => void): this {
     this.addListener(CHANGE_EVENT_NAME, fn);
     return this;
   }
 
-  private updateConfigAndCreateChangeEvent(oldText: undefined | string, newText: string): undefined | ConfigChangeEvent<string> {
+  private updateConfigAndCreateChangeEvent(oldText: undefined | string, newText: undefined | string): undefined | ConfigChangeEvent<string> {
     if (oldText === newText) {
       return;
     }

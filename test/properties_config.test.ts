@@ -49,6 +49,12 @@ it('should return the correct value and default value', () => {
   expect(propertiesConfig.getProperty('a.none', 'default value')).toBe('default value');
 });
 
+it('should return a copy of all properties configs', () => {
+  const allConfig = propertiesConfig.getAllConfig();
+  allConfig.set('a.b', 'mutated');
+  expect(propertiesConfig.getProperty('a.b')).toBe(initConfigs['a.b']);
+});
+
 it('should get the correct changeEvent', (done: jest.DoneCallback): void => {
   try {
     const handle = (changeEvent: ConfigChangeEvent<string>): void => {
