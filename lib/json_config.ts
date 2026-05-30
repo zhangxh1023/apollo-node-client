@@ -4,7 +4,7 @@ import { ConfigInterface } from './configInterface.js';
 import { ConfigChange } from './config_change.js';
 import { ConfigChangeEvent } from './config_change_event.js';
 import { CHANGE_EVENT_NAME, PropertyChangeType } from './constants.js';
-import { Request } from './request.js';
+import { LoadConfigResp, Request } from './request.js';
 import { ConfigContentType, ConfigOptions } from './types.js';
 
 export type JSONBaseType = string | number | boolean | null;
@@ -20,6 +20,8 @@ export type JSONValueType = JSONBaseType | JSONArrayType | JSONType;
 export class JSONConfig extends Config implements ConfigInterface {
 
   private configs: JSONValueType = Object.create(null);
+
+  private content: undefined | string;
 
   constructor(options: ConfigOptions, ip?: string) {
     super(options, ip);
@@ -66,8 +68,8 @@ export class JSONConfig extends Config implements ConfigInterface {
   public async _loadAndUpdateConfig(url: string, headers: AuthHeader | undefined): Promise<void> {
     const loadConfigResp = await Request.fetchConfig<ConfigContentType>(url, headers);
     if (loadConfigResp) {
-      const content = loadConfigResp.configurations.content;
-      if (content) {
+      const content = this.resolveContent(loadConfigResp);
+      if (content !== undefined) {
         let newConfigs: JSONValueType;
         try {
           newConfigs = JSON.parse(content);
@@ -82,8 +84,22 @@ export class JSONConfig extends Config implements ConfigInterface {
         if (configChangeEvent) {
           this.emit(CHANGE_EVENT_NAME, configChangeEvent);
         }
+        this.content = content;
       }
       this.setReleaseKey(loadConfigResp.releaseKey);
+    }
+  }
+
+  private resolveContent(loadConfigResp: LoadConfigResp<ConfigContentType>): undefined | string {
+    if (loadConfigResp.configurations) {
+      return loadConfigResp.configurations.content;
+    }
+    if (Request.isIncrementalConfig(loadConfigResp)) {
+      const configurations: ConfigContentType = Object.create(null);
+      if (this.content !== undefined) {
+        configurations.content = this.content;
+      }
+      return Request.mergeConfigurationChanges(configurations, loadConfigResp.configurationChanges).content;
     }
   }
 

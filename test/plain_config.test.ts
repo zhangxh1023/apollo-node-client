@@ -7,6 +7,9 @@ import { CHANGE_EVENT_NAME, PropertyChangeType } from '../lib/constants';
 
 jest.mock('../lib/request');
 const mockRequest = Request as jest.Mocked<typeof Request>;
+const actualRequest = jest.requireActual('../lib/request').Request;
+mockRequest.isIncrementalConfig.mockImplementation(actualRequest.isIncrementalConfig);
+mockRequest.mergeConfigurationChanges.mockImplementation(actualRequest.mergeConfigurationChanges);
 const namespaceName = 'test.txt';
 const mockResponse = (configs: string): LoadConfigResp<ConfigContentType> => {
   return {
@@ -74,6 +77,43 @@ it('should get the correct changeEvent', (done: jest.DoneCallback) => {
   } catch (error) {
     done(error);
   }
+});
+
+it('should not emit change event when content is unchanged', async () => {
+  const noChangeConfig = new PlainConfig(configOptions);
+  mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse(initConfigs));
+  await noChangeConfig.loadAndUpdateConfig();
+
+  const handle = jest.fn();
+  noChangeConfig.addChangeListener(handle);
+  mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse(initConfigs));
+  await noChangeConfig.loadAndUpdateConfig();
+
+  expect(handle).not.toHaveBeenCalled();
+});
+
+it('should apply incremental content response', async () => {
+  const incrementalConfig = new PlainConfig(configOptions);
+  mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse(initConfigs));
+  await incrementalConfig.loadAndUpdateConfig();
+
+  mockRequest.fetchConfig.mockResolvedValueOnce({
+    appId: 'SampleApp',
+    cluster: 'default',
+    namespaceName,
+    releaseKey: '20200203154031-1dc524aa9a4a5974',
+    configSyncType: 'INCREMENTAL_SYNC',
+    configurationChanges: [
+      {
+        key: 'content',
+        changeType: 'MODIFIED',
+        newValue: 'incremental config',
+      },
+    ],
+  });
+  await incrementalConfig.loadAndUpdateConfig();
+
+  expect(incrementalConfig.getAllConfig()).toBe('incremental config');
 });
 
 it('should throw request error', async () => {

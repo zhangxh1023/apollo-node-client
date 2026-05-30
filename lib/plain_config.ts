@@ -3,7 +3,7 @@ import { Config } from './config.js';
 import { ConfigInterface } from './configInterface.js';
 import { ConfigChangeEvent } from './config_change_event.js';
 import { ConfigContentType, ConfigOptions } from './types.js';
-import { Request } from './request.js';
+import { LoadConfigResp, Request } from './request.js';
 import { CHANGE_EVENT_NAME, PropertyChangeType } from './constants.js';
 import { ConfigChange } from './config_change.js';
 
@@ -29,11 +29,27 @@ export class PlainConfig extends Config implements ConfigInterface {
   public async _loadAndUpdateConfig(url: string, headers: AuthHeader | undefined): Promise<void> {
     const loadConfigResp = await Request.fetchConfig<ConfigContentType>(url, headers);
     if (loadConfigResp) {
-      const configChangeEvent = this.updateConfigAndCreateChangeEvent(this.configs, loadConfigResp.configurations.content);
-      if (configChangeEvent) {
-        this.emit(CHANGE_EVENT_NAME, configChangeEvent);
+      const content = this.resolveContent(loadConfigResp);
+      if (content !== undefined) {
+        const configChangeEvent = this.updateConfigAndCreateChangeEvent(this.configs, content);
+        if (configChangeEvent) {
+          this.emit(CHANGE_EVENT_NAME, configChangeEvent);
+        }
       }
       this.setReleaseKey(loadConfigResp.releaseKey);
+    }
+  }
+
+  private resolveContent(loadConfigResp: LoadConfigResp<ConfigContentType>): undefined | string {
+    if (loadConfigResp.configurations) {
+      return loadConfigResp.configurations.content;
+    }
+    if (Request.isIncrementalConfig(loadConfigResp)) {
+      const configurations: ConfigContentType = Object.create(null);
+      if (this.configs !== undefined) {
+        configurations.content = this.configs;
+      }
+      return Request.mergeConfigurationChanges(configurations, loadConfigResp.configurationChanges).content;
     }
   }
 
@@ -43,6 +59,9 @@ export class PlainConfig extends Config implements ConfigInterface {
   }
 
   private updateConfigAndCreateChangeEvent(oldText: undefined | string, newText: string): undefined | ConfigChangeEvent<string> {
+    if (oldText === newText) {
+      return;
+    }
     let changeType: PropertyChangeType;
     if (oldText === undefined) {
       changeType = PropertyChangeType.ADDED;

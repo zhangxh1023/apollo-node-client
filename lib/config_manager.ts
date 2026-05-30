@@ -10,6 +10,8 @@ export type ConfigManagerOptions = {
   appId: string;
   clusterName: string;
   secret?: string;
+  label?: string;
+  dataCenter?: string;
 };
 
 type NamespacePair = {
@@ -113,7 +115,7 @@ export class ConfigManager {
         const key = this.formatConfigsMapKey(item.namespaceName);
         const config = this.configsMap.get(key);
         if (config) {
-          await config.loadAndUpdateConfig();
+          await config.loadAndUpdateConfig(item.notificationId);
           config.setNotificationId(item.notificationId);
         }
       }

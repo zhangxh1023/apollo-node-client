@@ -75,6 +75,17 @@ console.log(config.getProperty('mysql.user'));                  // root
 console.log(config.getProperty('mysql.missing', 'default'));    // default
 ```
 
+### Specify `label` or `dataCenter`
+```javascript
+const service = new ConfigService({
+  configServerUrl: 'http://localhost:8080/',
+  appId: 'SampleApp',
+  clusterName: 'default',
+  label: 'gray',
+  dataCenter: 'shanghai'
+});
+```
+
 ### Listen for config change events
 ```javascript
 config.addChangeListener((changeEvent) => {
@@ -101,6 +112,8 @@ config.addChangeListener((changeEvent) => {
     - `appId` _\<string>_ Application ID
     - `[clusterName]` _\<string>_ Cluster name
     - `[secret]` _\<string>_ Access key secret
+    - `[label]` _\<string>_ Apollo label for grayscale release
+    - `[dataCenter]` _\<string>_ Apollo data center
   
   - Returns: _ConfigService_
 

@@ -3,6 +3,7 @@ import { Request, Notification } from '../lib/request';
 import { PropertiesConfig } from '../lib/properties_config';
 import { JSONConfig } from '../lib/json_config';
 import { PlainConfig } from '../lib/plain_config';
+import { NOTIFICATION_ID_PLACEHOLDER } from '../lib/constants';
 
 jest.mock('../lib/request');
 const mockRequest = Request as jest.Mocked<typeof Request>;
@@ -152,6 +153,47 @@ describe('plain config', () => {
     expect(plainConfig.getAllConfig()).toEqual(newConfigs);
   });
 
+});
+
+describe('notification id loading', () => {
+  it('should pass notification id when loading notified config', async () => {
+    const manager = new ConfigManager({
+      configServerUrl: 'http://localhost:8080/',
+      appId: 'SampleApp',
+      clusterName: 'default',
+    });
+    const namespaceName = 'messageConfig';
+    const loadSpy = jest.spyOn(PropertiesConfig.prototype, 'loadAndUpdateConfig').mockResolvedValueOnce();
+    try {
+      mockRequest.fetchNotifications.mockResolvedValueOnce(mockNotifications(namespaceName, 9));
+      const config = await manager.getConfig(namespaceName);
+      expect(loadSpy).toHaveBeenCalledWith(9);
+      expect(config.getNotificationId()).toBe(9);
+    } finally {
+      manager.removeConfig(namespaceName);
+      loadSpy.mockRestore();
+    }
+  });
+
+  it('should keep old notification id when loading notified config fails', async () => {
+    const manager = new ConfigManager({
+      configServerUrl: 'http://localhost:8080/',
+      appId: 'SampleApp',
+      clusterName: 'default',
+    });
+    const namespaceName = 'messageConfigError';
+    const loadSpy = jest.spyOn(PropertiesConfig.prototype, 'loadAndUpdateConfig').mockRejectedValueOnce(new Error('Mock load config error'));
+    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    try {
+      mockRequest.fetchNotifications.mockResolvedValueOnce(mockNotifications(namespaceName, 9));
+      const config = await manager.getConfig(namespaceName);
+      expect(config.getNotificationId()).toBe(NOTIFICATION_ID_PLACEHOLDER);
+    } finally {
+      manager.removeConfig(namespaceName);
+      loadSpy.mockRestore();
+      logSpy.mockRestore();
+    }
+  });
 });
 
 it('should ignore the request error', async () => {

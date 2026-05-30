@@ -6,6 +6,9 @@ import { CHANGE_EVENT_NAME, PropertyChangeType } from '../lib/constants';
 
 jest.mock('../lib/request');
 const mockRequest = Request as jest.Mocked<typeof Request>;
+const actualRequest = jest.requireActual('../lib/request').Request;
+mockRequest.isIncrementalConfig.mockImplementation(actualRequest.isIncrementalConfig);
+mockRequest.mergeConfigurationChanges.mockImplementation(actualRequest.mergeConfigurationChanges);
 const namespaceName = 'application';
 const mockResponse = (configurations: KVConfigContentType): LoadConfigResp<KVConfigContentType> => {
   return {
@@ -116,6 +119,45 @@ it('should update config and correctly', async () => {
   mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse(newConfig));
   await propertiesConfig.loadAndUpdateConfig();
   expect(propertiesConfig.getAllConfig()).toStrictEqual(new Map(Object.entries(newConfig)));
+});
+
+it('should apply incremental config response', async () => {
+  const incrementalConfig = new PropertiesConfig(configOptions);
+  mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse({
+    key1: 'value1',
+    key2: 'value2',
+  }));
+  await incrementalConfig.loadAndUpdateConfig();
+
+  mockRequest.fetchConfig.mockResolvedValueOnce({
+    appId: 'SampleApp',
+    cluster: 'default',
+    namespaceName,
+    releaseKey: '20200203154031-1dc524aa9a4a5974',
+    configSyncType: 'INCREMENTAL_SYNC',
+    configurationChanges: [
+      {
+        key: 'key1',
+        changeType: 'MODIFIED',
+        newValue: 'value3',
+      },
+      {
+        key: 'key2',
+        changeType: 'DELETED',
+      },
+      {
+        key: 'key3',
+        changeType: 'ADDED',
+        newValue: 'value4',
+      },
+    ],
+  });
+  await incrementalConfig.loadAndUpdateConfig();
+
+  expect(incrementalConfig.getAllConfig()).toStrictEqual(new Map(Object.entries({
+    key1: 'value3',
+    key3: 'value4',
+  })));
 });
 
 it('should parse success when fetch config return null', async () => {

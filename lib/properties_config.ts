@@ -4,7 +4,7 @@ import { ConfigInterface } from './configInterface.js';
 import { ConfigChange } from './config_change.js';
 import { ConfigChangeEvent } from './config_change_event.js';
 import { CHANGE_EVENT_NAME, PropertyChangeType } from './constants.js';
-import { Request } from './request.js';
+import { LoadConfigResp, Request } from './request.js';
 import { ConfigOptions } from './types.js';
 
 export type KVConfigContentType = {
@@ -47,19 +47,41 @@ export class PropertiesConfig extends Config implements ConfigInterface {
   public async _loadAndUpdateConfig(url: string, headers: AuthHeader | undefined): Promise<void> {
     const loadConfigResp = await Request.fetchConfig<KVConfigContentType>(url, headers);
     if (loadConfigResp) {
+      const configurations = this.resolveConfigurations(loadConfigResp);
+      if (!configurations) {
+        this.setReleaseKey(loadConfigResp.releaseKey);
+        return;
+      }
       // diff change
-      const { added, deleted, changed } = this.diffMap(this.configs, loadConfigResp.configurations);
+      const { added, deleted, changed } = this.diffMap(this.configs, configurations);
       // update change and emit changeEvent
       const configChangeEvent = this.updateConfigAndCreateChangeEvent(added,
         deleted,
         changed,
-        loadConfigResp.configurations);
+        configurations);
       if (configChangeEvent) {
         this.emit(CHANGE_EVENT_NAME, configChangeEvent);
       }
       // update releaseKey
       this.setReleaseKey(loadConfigResp.releaseKey);
     }
+  }
+
+  private resolveConfigurations(loadConfigResp: LoadConfigResp<KVConfigContentType>): undefined | KVConfigContentType {
+    if (loadConfigResp.configurations) {
+      return loadConfigResp.configurations;
+    }
+    if (Request.isIncrementalConfig(loadConfigResp)) {
+      return Request.mergeConfigurationChanges(this.getCurrentConfigurations(), loadConfigResp.configurationChanges);
+    }
+  }
+
+  private getCurrentConfigurations(): KVConfigContentType {
+    const configurations: KVConfigContentType = Object.create(null);
+    for (const [key, value] of this.configs) {
+      configurations[key] = value;
+    }
+    return configurations;
   }
 
   private diffMap(oldConfigs: Map<string, string>, newConfigs: { [key: string]: string }): {

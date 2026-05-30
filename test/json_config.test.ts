@@ -6,6 +6,9 @@ import { ConfigContentType } from '../lib/types';
 
 jest.mock('../lib/request');
 const mockRequest = Request as jest.Mocked<typeof Request>;
+const actualRequest = jest.requireActual('../lib/request').Request;
+mockRequest.isIncrementalConfig.mockImplementation(actualRequest.isIncrementalConfig);
+mockRequest.mergeConfigurationChanges.mockImplementation(actualRequest.mergeConfigurationChanges);
 const namespaceName = 'test.json';
 const mockResponse = (configs: JSONValueType): LoadConfigResp<ConfigContentType> => {
   return {
@@ -137,4 +140,49 @@ it('should parse correctly when config type is a string', async () => {
   mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse(stringValue));
   await jsonConfig.loadAndUpdateConfig();
   expect(jsonConfig.getAllConfig()).toEqual(stringValue);
+});
+
+it('should parse empty content as string config', async () => {
+  const emptyConfig = new JSONConfig(configOptions);
+  mockRequest.fetchConfig.mockResolvedValueOnce({
+    appId: 'SampleApp',
+    cluster: 'default',
+    namespaceName,
+    configurations: {
+      content: '',
+    },
+    releaseKey: '20200203154030-1dc524aa9a4a5974'
+  });
+  await emptyConfig.loadAndUpdateConfig();
+  expect(emptyConfig.getAllConfig()).toBe('');
+});
+
+it('should apply incremental content response', async () => {
+  const incrementalConfig = new JSONConfig(configOptions);
+  mockRequest.fetchConfig.mockResolvedValueOnce(mockResponse({
+    enabled: false,
+  }));
+  await incrementalConfig.loadAndUpdateConfig();
+
+  mockRequest.fetchConfig.mockResolvedValueOnce({
+    appId: 'SampleApp',
+    cluster: 'default',
+    namespaceName,
+    releaseKey: '20200203154031-1dc524aa9a4a5974',
+    configSyncType: 'INCREMENTAL_SYNC',
+    configurationChanges: [
+      {
+        key: 'content',
+        changeType: 'MODIFIED',
+        newValue: JSON.stringify({
+          enabled: true,
+        }),
+      },
+    ],
+  });
+  await incrementalConfig.loadAndUpdateConfig();
+
+  expect(incrementalConfig.getAllConfig()).toStrictEqual({
+    enabled: true,
+  });
 });

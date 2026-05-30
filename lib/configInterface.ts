@@ -10,7 +10,7 @@ export interface ConfigInterface {
 
   getNotificationId(): number;
 
-  loadAndUpdateConfig(): Promise<void>;
+  loadAndUpdateConfig(notificationId?: number): Promise<void>;
 
   addChangeListener(fn: (changeEvent: ConfigChangeEvent<unknown>) => void): unknown;
 }

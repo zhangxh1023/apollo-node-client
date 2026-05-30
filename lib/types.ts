@@ -4,6 +4,8 @@ export type ConfigOptions = {
   clusterName: string;
   namespaceName: string;
   secret?: string;
+  label?: string;
+  dataCenter?: string;
 }
 
 export type ConfigContentType = {

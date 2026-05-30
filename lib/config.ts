@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import { Access, AuthHeader } from './access.js';
 import { NOTIFICATION_ID_PLACEHOLDER } from './constants.js';
 import { ConfigOptions } from './types.js';
-import { Request } from './request.js';
+import { NotificationMessages, Request } from './request.js';
 
 export abstract class Config extends EventEmitter {
 
@@ -51,11 +51,12 @@ export abstract class Config extends EventEmitter {
     return this.ip;
   }
 
-  public async loadAndUpdateConfig(): Promise<void> {
+  public async loadAndUpdateConfig(notificationId?: number): Promise<void> {
     const url = Request.formatConfigUrl({
       ...this.getConfigOptions(),
       releaseKey: this.getReleaseKey(),
       ip: this.getIp(),
+      messages: notificationId === undefined ? undefined : this.createNotificationMessages(notificationId),
     });
     let headers: AuthHeader | undefined;
     const secret = this.getSecret();
@@ -63,6 +64,15 @@ export abstract class Config extends EventEmitter {
       headers = Access.createAccessHeader(this.getAppId(), url, secret);
     }
     return this._loadAndUpdateConfig(url, headers);
+  }
+
+  private createNotificationMessages(notificationId: number): NotificationMessages {
+    const { appId, clusterName, namespaceName } = this.options;
+    return {
+      details: {
+        [`${appId}+${clusterName}+${namespaceName}`]: notificationId,
+      },
+    };
   }
 
   abstract _loadAndUpdateConfig(url: string, headers: AuthHeader | undefined): Promise<void>

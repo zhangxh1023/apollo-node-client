@@ -7,11 +7,18 @@ import { NOTIFICATION_ID_PLACEHOLDER } from '../lib/constants';
 
 const releaseKey = '20170430092936-dee2d58e74515ff3';
 const ip = '0.0.0.1';
+const label = 'gray';
+const dataCenter = 'shanghai';
 const configServerUrl = 'http://localhost:3000/';
 const appId = 'SampleApp';
 const clusterName = 'default';
 const namespaceName1 = 'test';
 const namespaceName2 = 'first.json';
+const notificationMessages = {
+  details: {
+    [`${appId}+${clusterName}+${namespaceName1}`]: 101,
+  },
+};
 
 const fetchConfigResp = {
   appId,
@@ -50,6 +57,15 @@ const paramConfigUrl = Request.formatConfigUrl({
   ...configOptions,
   releaseKey,
   ip,
+  label,
+  dataCenter,
+  messages: notificationMessages,
+});
+
+const encodedConfigUrl = Request.formatConfigUrl({
+  ...configOptions,
+  appId: 'Sample App',
+  namespaceName: 'test/namespace',
 });
 
 const notificationOptions = {
@@ -111,6 +127,7 @@ describe('test config request', () => {
       const simpleUrl = new URL(simpleConfigUrl);
       expect(simpleUrl.searchParams.get('releaseKey')).toBeNull();
       expect(simpleUrl.searchParams.get('ip')).toBeNull();
+      expect(simpleUrl.search).toBe('');
       expect(simpleUrl.origin + simpleUrl.pathname).toBe(`${configServerUrl}configs/SampleApp/default/test`);
     });
 
@@ -118,7 +135,15 @@ describe('test config request', () => {
       const paramUrl = new URL(paramConfigUrl);
       expect(paramUrl.searchParams.get('releaseKey')).toBe(releaseKey);
       expect(paramUrl.searchParams.get('ip')).toBe(ip);
+      expect(paramUrl.searchParams.get('label')).toBe(label);
+      expect(paramUrl.searchParams.get('dataCenter')).toBe(dataCenter);
+      expect(JSON.parse(paramUrl.searchParams.get('messages') || '')).toStrictEqual(notificationMessages);
       expect(paramUrl.origin + paramUrl.pathname).toBe(`${configServerUrl}configs/SampleApp/default/test`);
+    });
+
+    it('should encode config path segments', () => {
+      const encodedUrl = new URL(encodedConfigUrl);
+      expect(encodedUrl.pathname).toBe('/configs/Sample%20App/default/test%2Fnamespace');
     });
   });
 
@@ -205,6 +230,44 @@ describe('test notification request', () => {
         header1: '1'
       };
       await expect(Request.fetchConfig(paramNotificationUrl, headers)).resolves.toStrictEqual(fetchNotificationsResp);
+    });
+  });
+});
+
+describe('test incremental config helpers', () => {
+  it('should detect incremental config response', () => {
+    expect(Request.isIncrementalConfig({
+      appId,
+      cluster: clusterName,
+      namespaceName: namespaceName1,
+      releaseKey,
+      configSyncType: 'INCREMENTAL_SYNC',
+      configurationChanges: [],
+    })).toBeTruthy();
+  });
+
+  it('should merge incremental config changes', () => {
+    expect(Request.mergeConfigurationChanges({
+      key1: 'value1',
+      key2: 'value2',
+    }, [
+      {
+        key: 'key1',
+        changeType: 'MODIFIED',
+        newValue: 'value3',
+      },
+      {
+        key: 'key2',
+        changeType: 'DELETED',
+      },
+      {
+        key: 'key3',
+        changeType: 'ADDED',
+        newValue: '',
+      },
+    ])).toStrictEqual({
+      key1: 'value3',
+      key3: '',
     });
   });
 });
