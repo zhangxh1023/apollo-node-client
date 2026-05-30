@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "tsx index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -18,9 +19,7 @@
   },
   "type": "module",
   "dependencies": {
-    "apollo-node-client": "link:.."
-  },
-  "devDependencies": {
+    "apollo-node-client": "link:..",
     "tsx": "^4.22.3"
   }
 }

@@ -1,13 +1,15 @@
-import { ConfigService, ConfigChangeEvent } from 'apollo-node-client';
+import { ConfigService } from 'apollo-node-client';
+import type { ConfigChangeEvent } from 'apollo-node-client';
 
 const service = new ConfigService({
   configServerUrl: 'http://localhost:8080/',
   appId: 'apolloNodeClient',
   clusterName: 'default',
-  // secret: '16b63e04c38f4bd2b10dadb3ad39e356'
+  secret: '4765dcd7334b4cef8435bb97d4b5bbca'
 });
 
 async function main(): Promise<void> {
+  console.log('start to get config');
   const [
     appConfig,
     jsonConfig,

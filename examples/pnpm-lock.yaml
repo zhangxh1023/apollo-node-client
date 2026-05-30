@@ -213,7 +213,6 @@ importers:
       apollo-node-client:
         specifier: link:..
         version: link:..
-    devDependencies:
       tsx:
         specifier: ^4.22.3
         version: 4.22.3
