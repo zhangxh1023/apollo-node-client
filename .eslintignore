@@ -2,3 +2,4 @@ dist/*
 coverage/*
 node_modules/*
 examples/node_modules/*
+examples/dist/*

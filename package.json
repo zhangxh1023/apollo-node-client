@@ -5,18 +5,18 @@
   "author": "zhangxh1023",
   "email": "zhangxh1023@gmail.com",
   "url": "https://github.com/zhangxh1023/apollo-node-client",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "typings": "./dist/cjs/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "exports": {
     ".": {
       "import": {
-        "types": "./dist/esm/index.d.ts",
-        "default": "./dist/esm/index.js"
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
       },
       "require": {
-        "types": "./dist/cjs/index.d.ts",
-        "default": "./dist/cjs/index.js"
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
       }
     }
   },
@@ -34,9 +34,8 @@
     "ctrip apollo client"
   ],
   "scripts": {
-    "build": "npm run build:cjs && npm run build:esm",
-    "build:cjs": "tsc -p tsconfig.cjs.json",
-    "build:esm": "tsc -p tsconfig.esm.json && node scripts/write-esm-package-json.cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "npm run typecheck && tsdown",
     "clean": "rm -rf dist coverage",
     "lint": "eslint --ext .ts .",
     "fix": "eslint --fix --ext .ts .",
@@ -52,11 +51,10 @@
     "@typescript-eslint/eslint-plugin": "^2.19.0",
     "@typescript-eslint/parser": "^2.19.0",
     "eslint": "^6.8.0",
-    "i": "^0.3.7",
     "jest": "^29.4.1",
-    "npm": "^8.19.2",
     "ts-jest": "^29.0.5",
-    "typescript": "^4.8.3"
+    "tsdown": "^0.22.1",
+    "typescript": "^6.0.3"
   },
   "dependencies": {
     "node-fetch": "^2.6.9",

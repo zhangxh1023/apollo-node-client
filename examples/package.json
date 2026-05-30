@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "tsx index.ts",
+    "build": "tsdown",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -19,7 +20,10 @@
   },
   "type": "module",
   "dependencies": {
-    "apollo-node-client": "link:..",
+    "apollo-node-client": "link:.."
+  },
+  "devDependencies": {
+    "tsdown": "^0.22.1",
     "tsx": "^4.22.3"
   }
 }

@@ -1,5 +1,7 @@
-**/node_modules/*
+node_modules/*
 .vscode/*
 coverage/*
 dist/*
 .DS_Store
+examples/node_modules/*
+examples/dist/*
