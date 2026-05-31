@@ -17,7 +17,27 @@ newValue: ${change.getNewValue()}`);
   });
 
   console.log(appConfig.getAllConfig());
-  console.log(appConfig.getProperty('mysql.user'));
+};
+
+const gray = async (): Promise<void> => {
+  const appConfig = (await service.getAppConfig({
+    label: 'gray',
+  })) as PropertiesConfig;
+  appConfig.addChangeListener((changeEvent: ConfigChangeEvent<string>) => {
+    for (const key of changeEvent.changedKeys()) {
+      const change = changeEvent.getChange(key);
+      if (change) {
+        console.log(`gray namespace: ${change.getNamespace()},
+gray changeType: ${change.getChangeType()},
+gray propertyName: ${change.getPropertyName()},
+gray oldValue: ${change.getOldValue()},
+gray newValue: ${change.getNewValue()}`);
+      }
+    }
+  });
+
+  console.log(appConfig.getAllConfig());
 };
 
 main();
+gray();
