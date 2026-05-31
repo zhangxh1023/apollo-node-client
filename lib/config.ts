@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { Access, AuthHeader } from './access.js';
 import { NOTIFICATION_ID_PLACEHOLDER } from './constants.js';
-import { ConfigOptions } from './types.js';
+import { ConfigOptions, ConfigRequestOptions } from './types.js';
 import { NotificationMessages, Request } from './request.js';
 
 export abstract class Config extends EventEmitter {
@@ -10,9 +10,12 @@ export abstract class Config extends EventEmitter {
 
   private notificationId = NOTIFICATION_ID_PLACEHOLDER;
 
-  constructor(private readonly options: ConfigOptions, private readonly ip?: string) {
+  private readonly requestOptions: ConfigRequestOptions;
+
+  constructor(private readonly options: ConfigOptions, requestOptions: string | ConfigRequestOptions = {}) {
     super();
     this.options = options;
+    this.requestOptions = this.normalizeRequestOptions(requestOptions);
   }
 
   public getNamespaceName(): string {
@@ -48,7 +51,11 @@ export abstract class Config extends EventEmitter {
   }
 
   protected getIp(): undefined | string {
-    return this.ip;
+    return this.requestOptions.ip;
+  }
+
+  protected getLabel(): undefined | string {
+    return this.requestOptions.label;
   }
 
   public async loadAndUpdateConfig(notificationId?: number): Promise<void> {
@@ -56,6 +63,7 @@ export abstract class Config extends EventEmitter {
       ...this.getConfigOptions(),
       releaseKey: this.getReleaseKey(),
       ip: this.getIp(),
+      label: this.getLabel(),
       messages: notificationId === undefined ? undefined : this.createNotificationMessages(notificationId),
     });
     let headers: AuthHeader | undefined;
@@ -72,6 +80,16 @@ export abstract class Config extends EventEmitter {
       details: {
         [`${appId}+${clusterName}+${namespaceName}`]: notificationId,
       },
+    };
+  }
+
+  private normalizeRequestOptions(options: string | ConfigRequestOptions): ConfigRequestOptions {
+    if (typeof options === 'string') {
+      return { ip: options };
+    }
+    return {
+      ip: options.ip,
+      label: options.label,
     };
   }
 

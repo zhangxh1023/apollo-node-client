@@ -5,7 +5,7 @@ import { ConfigChange } from './config_change.js';
 import { ConfigChangeEvent } from './config_change_event.js';
 import { CHANGE_EVENT_NAME, PropertyChangeType } from './constants.js';
 import { LoadConfigResp, Request } from './request.js';
-import { ConfigContentType, ConfigOptions } from './types.js';
+import { ConfigContentType, ConfigOptions, ConfigRequestOptions } from './types.js';
 
 export type JSONBaseType = string | number | boolean | null;
 
@@ -23,8 +23,8 @@ export class JSONConfig extends Config implements ConfigInterface<JSONValueType,
 
   private content: undefined | string;
 
-  constructor(options: ConfigOptions, ip?: string) {
-    super(options, ip);
+  constructor(options: ConfigOptions, requestOptions?: string | ConfigRequestOptions) {
+    super(options, requestOptions);
   }
 
   public getProperty(key: string, defaultValue?: JSONValueType): undefined | JSONValueType {

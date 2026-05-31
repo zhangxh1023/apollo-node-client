@@ -8,7 +8,6 @@ import { NOTIFICATION_ID_PLACEHOLDER } from '../lib/constants';
 const releaseKey = '20170430092936-dee2d58e74515ff3';
 const ip = '0.0.0.1';
 const label = 'gray';
-const dataCenter = 'shanghai';
 let configServerUrl = 'http://127.0.0.1:3000/';
 const appId = 'SampleApp';
 const clusterName = 'default';
@@ -58,7 +57,6 @@ const formatParamConfigUrl = (): string => Request.formatConfigUrl({
   releaseKey,
   ip,
   label,
-  dataCenter,
   messages: notificationMessages,
 });
 
@@ -144,7 +142,6 @@ describe('test config request', () => {
       expect(paramUrl.searchParams.get('releaseKey')).toBe(releaseKey);
       expect(paramUrl.searchParams.get('ip')).toBe(ip);
       expect(paramUrl.searchParams.get('label')).toBe(label);
-      expect(paramUrl.searchParams.get('dataCenter')).toBe(dataCenter);
       expect(JSON.parse(paramUrl.searchParams.get('messages') || '')).toStrictEqual(notificationMessages);
       expect(paramUrl.origin + paramUrl.pathname).toBe(`${configServerUrl}configs/SampleApp/default/test`);
     });

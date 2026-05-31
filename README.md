@@ -67,26 +67,29 @@ console.log(config.getProperty('', 'default'));                 // txt config
 console.log(config.getProperty());                              // txt config
 ```
 
-### Specify a canary release server `ip`
+### Specify canary release `ip` or `label`
 ```javascript
 const config = await service.getConfig('application', '192.168.3.4');
 config.getAllConfig();                                          // Map(1) { 'mysql.user' => 'root' }
 console.log(config.getProperty('mysql.user'));                  // root
 console.log(config.getProperty('mysql.missing', 'default'));    // default
 ```
-Configs are cached by `namespace` and `ip`. Calling `getConfig('application', '192.168.3.4')`
-and `getConfig('application', '192.168.3.5')` returns different config instances.
 
-### Specify `label` or `dataCenter`
+The string second argument is kept as the server `ip` for backwards compatibility.
+Use an options object when you need `label` or both `ip` and `label`:
+
 ```javascript
-const service = new ConfigService({
-  configServerUrl: 'http://localhost:8080/',
-  appId: 'SampleApp',
-  clusterName: 'default',
+const labelConfig = await service.getConfig('application', {
   label: 'gray',
-  dataCenter: 'shanghai'
+});
+
+const ipAndLabelConfig = await service.getConfig('application', {
+  ip: '192.168.3.4',
+  label: 'gray',
 });
 ```
+Configs are cached by `namespace`, `ip`, and `label`. Calling `getConfig('application', '192.168.3.4')`
+and `getConfig('application', '192.168.3.5')` returns different config instances.
 
 ### Listen for config change events
 ```javascript
@@ -121,19 +124,21 @@ Existing config objects can still read their last loaded values, but they will n
     - `appId` _\<string>_ Application ID
     - `[clusterName]` _\<string>_ Cluster name
     - `[secret]` _\<string>_ Access key secret
-    - `[label]` _\<string>_ Apollo label for grayscale release
-    - `[dataCenter]` _\<string>_ Apollo data center
   
   - Returns: _ConfigService_
 
-- configService.getAppConfig( [ ip ] )
-  - `[ip]` _\<string>_ Server IP for canary release
+- configService.getAppConfig( [ ipOrOptions ] )
+  - `[ipOrOptions]` _\<string | Object>_ Server IP string or request options for canary release
+    - `[ip]` _\<string>_ Server IP for canary release
+    - `[label]` _\<string>_ Apollo label for grayscale release
 
   - Returns: _Promise\<PropertiesConfig>_ Default `namespace` is `application`
 
-- configService.getConfig( namespaceName, [ ip ] )
+- configService.getConfig( namespaceName, [ ipOrOptions ] )
   - `namespaceName` _\<string>_ Namespace name. The config format is determined by the file extension. Defaults to `properties` if no extension. Supports `.json`, `.properties`, `.xml`, `.yml`, `.yaml`, `.txt`
-  - `[ip]` _\<string>_ Server IP for canary release
+  - `[ipOrOptions]` _\<string | Object>_ Server IP string or request options for canary release
+    - `[ip]` _\<string>_ Server IP for canary release
+    - `[label]` _\<string>_ Apollo label for grayscale release
 
   - Returns: _Promise\<PropertiesConfig | JSONConfig | PlainConfig>_
 

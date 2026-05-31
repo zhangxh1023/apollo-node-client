@@ -2,7 +2,7 @@ import { AuthHeader } from './access.js';
 import { Config } from './config.js';
 import { ConfigInterface } from './configInterface.js';
 import { ConfigChangeEvent } from './config_change_event.js';
-import { ConfigContentType, ConfigOptions } from './types.js';
+import { ConfigContentType, ConfigOptions, ConfigRequestOptions } from './types.js';
 import { LoadConfigResp, Request } from './request.js';
 import { CHANGE_EVENT_NAME, PropertyChangeType } from './constants.js';
 import { ConfigChange } from './config_change.js';
@@ -16,8 +16,8 @@ export class PlainConfig extends Config implements ConfigInterface<string, undef
 
   private configs: undefined | string;
 
-  constructor(options: ConfigOptions, ip?: string) {
-    super(options, ip);
+  constructor(options: ConfigOptions, requestOptions?: string | ConfigRequestOptions) {
+    super(options, requestOptions);
   }
 
   getAllConfig(): undefined | string {

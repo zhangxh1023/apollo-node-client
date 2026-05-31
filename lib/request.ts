@@ -9,7 +9,6 @@ export type ConfigUrlOptions = {
   releaseKey?: string;
   ip?: string;
   label?: string;
-  dataCenter?: string;
   messages?: NotificationMessages;
 };
 
@@ -23,7 +22,6 @@ export type ConfigQueryParam = {
   releaseKey?: string;
   ip?: string;
   label?: string;
-  dataCenter?: string;
   messages?: string;
 };
 
@@ -59,7 +57,7 @@ export type LoadConfigResp<T> = {
 
 export class Request {
   public static formatConfigUrl(urlOptions: ConfigUrlOptions): string {
-    const { appId, clusterName, namespaceName, configServerUrl, releaseKey, ip, label, dataCenter, messages } = urlOptions;
+    const { appId, clusterName, namespaceName, configServerUrl, releaseKey, ip, label, messages } = urlOptions;
     const url = this.trimTrailingSlash(configServerUrl);
     const params: ConfigQueryParam = Object.create(null);
     if (releaseKey) {
@@ -70,9 +68,6 @@ export class Request {
     }
     if (label) {
       params.label = label;
-    }
-    if (dataCenter) {
-      params.dataCenter = dataCenter;
     }
     if (messages) {
       params.messages = JSON.stringify(messages);

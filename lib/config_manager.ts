@@ -4,14 +4,13 @@ import { JSONConfig } from './json_config.js';
 import { Access, AuthHeader } from './access.js';
 import { Request } from './request.js';
 import { PlainConfig } from './plain_config.js';
+import { ConfigRequestOptions } from './types.js';
 
 export type ConfigManagerOptions = {
   configServerUrl: string;
   appId: string;
   clusterName: string;
   secret?: string;
-  label?: string;
-  dataCenter?: string;
 };
 
 type NamespacePair = {
@@ -22,6 +21,8 @@ type NamespacePair = {
 export class ConfigManager {
 
   private static readonly NO_IP_CONFIGS_MAP_KEY = '<no-ip>';
+
+  private static readonly NO_LABEL_CONFIGS_MAP_KEY = '<no-label>';
 
   private LONG_POLL_RETRY_TIME = 1000;
 
@@ -55,35 +56,41 @@ export class ConfigManager {
     return { namespaceName, type: ConfigTypes.PROPERTIES };
   }
 
-  public async getConfig(namespaceName: string, ip?: string): Promise<PropertiesConfig | JSONConfig | PlainConfig> {
+  public async getConfig(namespaceName: string, ip?: string): Promise<PropertiesConfig | JSONConfig | PlainConfig>;
+  public async getConfig(namespaceName: string, options?: ConfigRequestOptions): Promise<PropertiesConfig | JSONConfig | PlainConfig>;
+  public async getConfig(namespaceName: string,
+    options?: string | ConfigRequestOptions): Promise<PropertiesConfig | JSONConfig | PlainConfig>;
+  public async getConfig(namespaceName: string,
+    options?: string | ConfigRequestOptions): Promise<PropertiesConfig | JSONConfig | PlainConfig> {
     const type = this.getTypeByNamespaceName(namespaceName);
     if (!type.namespaceName) {
       throw new Error('namespaceName can not be empty!');
     }
+    const requestOptions = this.normalizeRequestOptions(options);
     this.closed = false;
-    const mpKey = this.formatConfigsMapKey(type.namespaceName, ip);
+    const mpKey = this.formatConfigsMapKey(type.namespaceName, requestOptions);
     let config = this.configsMap.get(mpKey);
     if (!config) {
       if (type.type == ConfigTypes.PROPERTIES) {
         config = new PropertiesConfig({
           ...this.options,
           namespaceName: type.namespaceName,
-        }, ip);
+        }, requestOptions);
       } else if (type.type == ConfigTypes.JSON) {
         config = new JSONConfig({
           ...this.options,
           namespaceName: type.namespaceName,
-        }, ip);
+        }, requestOptions);
       } else {
         config = new PlainConfig({
           ...this.options,
           namespaceName: type.namespaceName,
-        }, ip);
+        }, requestOptions);
       }
 
       this.configsMapVersion = this.configsMapVersion % Number.MAX_SAFE_INTEGER + 1;
       const configsMapVersion = this.configsMapVersion;
-      const key = this.formatConfigsMapKey(config.getNamespaceName(), ip);
+      const key = this.formatConfigsMapKey(config.getNamespaceName(), requestOptions);
       this.configsMap.set(key, config);
       const singleMap = new Map();
       singleMap.set(key, config);
@@ -99,9 +106,13 @@ export class ConfigManager {
     return config;
   }
 
-  public removeConfig(namespaceName: string, ip?: string): void {
+  public removeConfig(namespaceName: string, ip?: string): void;
+  public removeConfig(namespaceName: string, options?: ConfigRequestOptions): void;
+  public removeConfig(namespaceName: string, options?: string | ConfigRequestOptions): void;
+  public removeConfig(namespaceName: string, options?: string | ConfigRequestOptions): void {
     const type = this.getTypeByNamespaceName(namespaceName);
-    const mpKey = this.formatConfigsMapKey(type.namespaceName, ip);
+    const requestOptions = this.normalizeRequestOptions(options);
+    const mpKey = this.formatConfigsMapKey(type.namespaceName, requestOptions);
     this.configsMap.delete(mpKey);
     if (this.configsMap.size === 0) {
       this.configsMapVersion = this.configsMapVersion % Number.MAX_SAFE_INTEGER + 1;
@@ -161,11 +172,22 @@ export class ConfigManager {
     }
   }
 
-  private formatConfigsMapKey(namespaceName: string, ip?: string): string {
+  private normalizeRequestOptions(options?: string | ConfigRequestOptions): ConfigRequestOptions {
+    if (typeof options === 'string') {
+      return { ip: options };
+    }
+    return {
+      ip: options && options.ip,
+      label: options && options.label,
+    };
+  }
+
+  private formatConfigsMapKey(namespaceName: string, requestOptions: ConfigRequestOptions): string {
     return [
       this.options.clusterName,
       namespaceName,
-      ip || ConfigManager.NO_IP_CONFIGS_MAP_KEY,
+      requestOptions.ip || ConfigManager.NO_IP_CONFIGS_MAP_KEY,
+      requestOptions.label || ConfigManager.NO_LABEL_CONFIGS_MAP_KEY,
     ].join(CLUSTER_NAMESPACE_SEPARATOR);
   }
 

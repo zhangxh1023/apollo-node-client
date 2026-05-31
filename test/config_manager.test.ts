@@ -91,12 +91,13 @@ describe('cache and lifecycle', () => {
     });
   };
 
-  it('should cache configs by namespace and ip', async () => {
+  it('should cache configs by namespace, ip, and label', async () => {
     const manager = new ConfigManager({
       configServerUrl: 'http://localhost:8080/',
       appId: 'SampleApp',
       clusterName: 'default',
     });
+    const longPollSpy = jest.spyOn(manager as any, 'startLongPoll').mockResolvedValue(undefined);
     const namespaceName = 'ipConfig';
     try {
       mockOnce(namespaceName);
@@ -107,8 +108,26 @@ describe('cache and lifecycle', () => {
       mockOnce(namespaceName);
       const ipConfig2 = await manager.getConfig(namespaceName, '192.168.1.2');
       expect(ipConfig2).not.toBe(ipConfig1);
+
+      mockOnce(namespaceName);
+      const labelConfig1 = await manager.getConfig(namespaceName, { label: 'gray' });
+      const sameLabelConfig = await manager.getConfig(namespaceName, { label: 'gray' });
+      expect(sameLabelConfig).toBe(labelConfig1);
+
+      mockOnce(namespaceName);
+      const labelConfig2 = await manager.getConfig(namespaceName, { label: 'stable' });
+      expect(labelConfig2).not.toBe(labelConfig1);
+
+      mockOnce(namespaceName);
+      const ipAndLabelConfig = await manager.getConfig(namespaceName, {
+        ip: '192.168.1.1',
+        label: 'gray',
+      });
+      expect(ipAndLabelConfig).not.toBe(ipConfig1);
+      expect(ipAndLabelConfig).not.toBe(labelConfig1);
     } finally {
       manager.close();
+      longPollSpy.mockRestore();
     }
   });
 

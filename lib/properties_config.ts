@@ -5,7 +5,7 @@ import { ConfigChange } from './config_change.js';
 import { ConfigChangeEvent } from './config_change_event.js';
 import { CHANGE_EVENT_NAME, PropertyChangeType } from './constants.js';
 import { LoadConfigResp, Request } from './request.js';
-import { ConfigOptions } from './types.js';
+import { ConfigOptions, ConfigRequestOptions } from './types.js';
 
 export type KVConfigContentType = {
   [key: string]: string;
@@ -15,8 +15,8 @@ export class PropertiesConfig extends Config implements ConfigInterface<string, 
 
   private configs: Map<string, string> = new Map();
 
-  constructor(options: ConfigOptions, ip?: string) {
-    super(options, ip);
+  constructor(options: ConfigOptions, requestOptions?: string | ConfigRequestOptions) {
+    super(options, requestOptions);
   }
 
   public getProperty(key: string, defaultValue?: string): undefined | string {
