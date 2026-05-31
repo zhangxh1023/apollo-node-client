@@ -1,21 +1,21 @@
 # apollo-node-client
-Node.js Client for [Apollo](https://github.com/ctripcorp/apollo)
+用于 [Apollo](https://github.com/ctripcorp/apollo) 的 Node.js 客户端。
 
-English | [简体中文](./README_zh.md)
+[English](./README.md) | 简体中文
 
-> **v2.0+** supports both CommonJS and ESM. 1.x only supports CommonJS.
+> **v2.0+** 同时支持 CommonJS 和 ESM。1.x 仅支持 CommonJS。
 
-## Install
+## 安装
 ```bash
 $ npm install apollo-node-client --save
 ```
 
-## Examples
+## 示例
 [examples](https://github.com/zhangxh1023/apollo-node-client/tree/master/examples)
 
-## Usage
+## 使用方式
 
-### Create a `ConfigService`
+### 创建 `ConfigService`
 
 CommonJS:
 ```javascript
@@ -27,7 +27,7 @@ ESM:
 import { ConfigService } from 'apollo-node-client';
 ```
 
-Then create an instance:
+然后创建实例：
 ```javascript
 const service = new ConfigService({
   configServerUrl: 'http://localhost:8080/',
@@ -37,7 +37,7 @@ const service = new ConfigService({
 });
 ```
 
-### Get the default `namespace` config (`application`)
+### 获取默认 `namespace` 配置（`application`）
 ```javascript
 const config = await service.getAppConfig();
 config.getAllConfig();                                          // Map(1) { 'mysql.user' => 'root' }
@@ -45,7 +45,7 @@ console.log(config.getProperty('mysql.user'));                  // root
 console.log(config.getProperty('mysql.missing', 'default'));    // default
 ```
 
-### Get `properties` format `namespace` config
+### 获取 `properties` 格式的 `namespace` 配置
 ```javascript
 const config = await service.getConfig('application');
 config.getAllConfig();                                          // Map(1) { 'mysql.user' => 'root' }
@@ -53,7 +53,7 @@ console.log(config.getProperty('mysql.user'));                  // root
 console.log(config.getProperty('mysql.missing', 'default'));    // default
 ```
 
-### Get `json` format `namespace` config
+### 获取 `json` 格式的 `namespace` 配置
 ```javascript
 const config = await service.getConfig('config.json');
 config.getAllConfig();                                          // { mysql: { user: 'root' } }
@@ -61,7 +61,7 @@ console.log(config.getProperty('mysql.user'));                  // root
 console.log(config.getProperty('mysql.missing', 'default'));    // default
 ```
 
-### Get `xml/yml/yaml/txt` format `namespace` config
+### 获取 `xml/yml/yaml/txt` 格式的 `namespace` 配置
 ```javascript
 const config = await service.getConfig('config.txt');
 config.getAllConfig();                                          // txt config
@@ -69,7 +69,7 @@ console.log(config.getProperty('', 'default'));                 // txt config
 console.log(config.getProperty());                              // txt config
 ```
 
-### Specify canary release `ip` or `label`
+### 指定灰度发布的 `ip` 或 `label`
 ```javascript
 const config = await service.getConfig('application', '192.168.3.4');
 config.getAllConfig();                                          // Map(1) { 'mysql.user' => 'root' }
@@ -77,8 +77,8 @@ console.log(config.getProperty('mysql.user'));                  // root
 console.log(config.getProperty('mysql.missing', 'default'));    // default
 ```
 
-The string second argument is kept as the server `ip` for backwards compatibility.
-Use an options object when you need `label` or both `ip` and `label`:
+为了向后兼容，第二个字符串参数仍会被作为服务器 `ip` 使用。
+当你需要使用 `label`，或者同时使用 `ip` 和 `label` 时，请传入 options 对象：
 
 ```javascript
 const labelConfig = await service.getConfig('application', {
@@ -90,10 +90,11 @@ const ipAndLabelConfig = await service.getConfig('application', {
   label: 'gray',
 });
 ```
-Configs are cached by `namespace`, `ip`, and `label`. Calling `getConfig('application', '192.168.3.4')`
-and `getConfig('application', '192.168.3.5')` returns different config instances.
 
-### Listen for config change events
+配置会按照 `namespace`、`ip` 和 `label` 进行缓存。调用 `getConfig('application', '192.168.3.4')`
+和 `getConfig('application', '192.168.3.5')` 会返回不同的配置实例。
+
+### 监听配置变更事件
 ```javascript
 config.addChangeListener((changeEvent) => {
   for (const key of changeEvent.changedKeys()) {
@@ -109,12 +110,13 @@ config.addChangeListener((changeEvent) => {
 });
 ```
 
-### Stop long polling
+### 停止长轮询
 ```javascript
 service.close();
 ```
-`close()` stops background long polling and clears cached config instances held by the service.
-Existing config objects can still read their last loaded values, but they will no longer update.
+
+`close()` 会停止后台长轮询，并清理 service 持有的缓存配置实例。
+已有的 config 对象仍然可以读取最后一次加载到的值，但不会再继续更新。
 
 ## API
 
@@ -122,36 +124,36 @@ Existing config objects can still read their last loaded values, but they will n
 
 - new ConfigService( options )
   - `options` _\<Object>_
-    - `configServerUrl` _\<string>_ Apollo config server URL
-    - `appId` _\<string>_ Application ID
-    - `[clusterName]` _\<string>_ Cluster name
-    - `[secret]` _\<string>_ Access key secret
-  
-  - Returns: _ConfigService_
+    - `configServerUrl` _\<string>_ Apollo 配置服务地址
+    - `appId` _\<string>_ 应用 ID
+    - `[clusterName]` _\<string>_ 集群名称
+    - `[secret]` _\<string>_ 访问密钥 secret
+
+  - 返回：_ConfigService_
 
 - configService.getAppConfig( [ ipOrOptions ] )
-  - `[ipOrOptions]` _\<string | Object>_ Server IP string or request options for canary release
-    - `[ip]` _\<string>_ Server IP for canary release
-    - `[label]` _\<string>_ Apollo label for grayscale release
+  - `[ipOrOptions]` _\<string | Object>_ 服务器 IP 字符串，或灰度发布的请求选项
+    - `[ip]` _\<string>_ 灰度发布使用的服务器 IP
+    - `[label]` _\<string>_ Apollo 灰度发布使用的 label
 
-  - Returns: _Promise\<PropertiesConfig>_ Default `namespace` is `application`
+  - 返回：_Promise\<PropertiesConfig>_ 默认 `namespace` 为 `application`
 
 - configService.getConfig( namespaceName, [ ipOrOptions ] )
-  - `namespaceName` _\<string>_ Namespace name. The config format is determined by the file extension. Defaults to `properties` if no extension. Supports `.json`, `.properties`, `.xml`, `.yml`, `.yaml`, `.txt`
-  - `[ipOrOptions]` _\<string | Object>_ Server IP string or request options for canary release
-    - `[ip]` _\<string>_ Server IP for canary release
-    - `[label]` _\<string>_ Apollo label for grayscale release
+  - `namespaceName` _\<string>_ Namespace 名称。配置格式由文件扩展名决定；没有扩展名时默认为 `properties`。支持 `.json`、`.properties`、`.xml`、`.yml`、`.yaml`、`.txt`
+  - `[ipOrOptions]` _\<string | Object>_ 服务器 IP 字符串，或灰度发布的请求选项
+    - `[ip]` _\<string>_ 灰度发布使用的服务器 IP
+    - `[label]` _\<string>_ Apollo 灰度发布使用的 label
 
-  - Returns: _Promise\<PropertiesConfig | JSONConfig | PlainConfig>_
+  - 返回：_Promise\<PropertiesConfig | JSONConfig | PlainConfig>_
 
 - configService.close()
 
-  - Stops long polling and clears cached config instances.
+  - 停止长轮询，并清理缓存的配置实例。
 
-  - Returns: _void_
+  - 返回：_void_
 
-> Initial load errors are logged and the config instance is still returned. The service keeps
-> long polling, so later successful Apollo responses can still populate or update the config.
+> 初始加载失败时会记录错误日志，但仍会返回配置实例。service 会继续保持长轮询，
+> 因此后续 Apollo 成功响应后，仍然可以填充或更新该配置。
 
 ---
 
@@ -159,18 +161,18 @@ Existing config objects can still read their last loaded values, but they will n
 
 - propertiesConfig.getAllConfig()
 
-  - Returns: _Map\<string, string>_ A copy of the current configs.
+  - 返回：_Map\<string, string>_ 当前配置的一份副本。
 
 - propertiesConfig.getProperty( key, [ defaultValue ] )
-  - `key` _\<string>_ Config key to retrieve
-  - `[defaultValue]` _\<string>_ Default value returned when the key does not exist
+  - `key` _\<string>_ 要获取的配置 key
+  - `[defaultValue]` _\<string>_ 当 key 不存在时返回的默认值
 
-  - Returns: _undefined | string_
+  - 返回：_undefined | string_
 
 - propertiesConfig.addChangeListener( handle )
-  - `handle` _( changeEvent: ConfigChangeEvent\<string> ) => void_ Callback for config change events
+  - `handle` _( changeEvent: ConfigChangeEvent\<string> ) => void_ 配置变更事件回调
 
-  - Returns: _PropertiesConfig_
+  - 返回：_PropertiesConfig_
 
 ---
 
@@ -178,22 +180,21 @@ Existing config objects can still read their last loaded values, but they will n
 
 - jsonConfig.getAllConfig()
 
-  - Returns: _JSONValueType_ A copy of the current configs.
+  - 返回：_JSONValueType_ 当前配置的一份副本。
 
 - jsonConfig.getProperty( key, [ defaultValue ] )
-  - `key` _\<string>_ Config key to retrieve
-  - `[defaultValue]` _\<JSONValueType>_ Default value returned when the key does not exist
+  - `key` _\<string>_ 要获取的配置 key
+  - `[defaultValue]` _\<JSONValueType>_ 当 key 不存在时返回的默认值
 
-  - Returns: _undefined | JSONValueType_
+  - 返回：_undefined | JSONValueType_
 
-  - Dot-separated keys are used for object traversal, for example `mysql.user`. Array indexes
-    are not traversed. Invalid JSON namespace content is returned as a plain string for backward
-    compatibility.
+  - 使用以点号分隔的 key 进行对象遍历，例如 `mysql.user`。不会遍历数组索引。
+    为了向后兼容，无效的 JSON namespace 内容会作为普通字符串返回。
 
 - jsonConfig.addChangeListener( handle )
-  - `handle` _( changeEvent: ConfigChangeEvent\<JSONValueType> ) => void_ Callback for config change events
+  - `handle` _( changeEvent: ConfigChangeEvent\<JSONValueType> ) => void_ 配置变更事件回调
 
-  - Returns: _JSONConfig_
+  - 返回：_JSONConfig_
 
 ---
 
@@ -201,34 +202,34 @@ Existing config objects can still read their last loaded values, but they will n
 
 - plainConfig.getAllConfig()
 
-  - Returns: _string_
+  - 返回：_string_
 
 - plainConfig.getProperty( key, [ defaultValue ] )
-  - `[key]` _\<string>_ Compatible with other config types. Any key returns the entire config text
-  - `[defaultValue]` _\<string>_ Default value returned when the config does not exist
+  - `[key]` _\<string>_ 用于兼容其他配置类型。任意 key 都会返回完整配置文本
+  - `[defaultValue]` _\<string>_ 当配置不存在时返回的默认值
 
-  - Returns: _undefined | string_
+  - 返回：_undefined | string_
 
 - plainConfig.addChangeListener( handle )
-  - `handle` _( changeEvent: ConfigChangeEvent\<string> ) => void_ Callback for config change events
+  - `handle` _( changeEvent: ConfigChangeEvent\<string> ) => void_ 配置变更事件回调
 
-  - Returns: _PlainConfig_
+  - 返回：_PlainConfig_
 
 ---
 
 ### Class: ConfigChangeEvent
 
 - configChangeEvent.getNamespace()
-  
-  - Returns: _string_
+
+  - 返回：_string_
 
 - configChangeEvent.changedKeys()
 
-  - Returns: _string[]_
+  - 返回：_string[]_
 
 - configChangeEvent.getChange()
 
-  - Returns: _undefined | ConfigChange\<T>_
+  - 返回：_undefined | ConfigChange\<T>_
 
 ---
 
@@ -236,23 +237,23 @@ Existing config objects can still read their last loaded values, but they will n
 
 - configChange.getNamespace()
 
-  - Returns: _string_
+  - 返回：_string_
 
 - configChange.getPropertyName()
 
-  - Returns: _string_
+  - 返回：_string_
 
 - configChange.getOldValue()
 
-  - Returns: _undefined | T_
+  - 返回：_undefined | T_
 
 - configChange.getNewValue()
 
-  - Returns: _undefined | T_
+  - 返回：_undefined | T_
 
 - configChange.getChangeType()
 
-  - Returns: _PropertyChangeType_
+  - 返回：_PropertyChangeType_
 
 ---
 
@@ -266,8 +267,8 @@ Existing config objects can still read their last loaded values, but they will n
 
 ---
 
-## Contributing
-Contributions are always welcome!
+## 参与贡献
+欢迎提交贡献！
 
-## License
+## 许可证
 [MIT](https://github.com/zhangxh1023/apollo-node-client/blob/master/LICENSE)
