@@ -1,3 +1,5 @@
+
+
 # apollo-node-client
 Node.js Client for [Apollo](https://github.com/ctripcorp/apollo)
 
@@ -226,7 +228,8 @@ Existing config objects can still read their last loaded values, but they will n
 
   - Returns: _string[]_
 
-- configChangeEvent.getChange()
+- configChangeEvent.getChange( key )
+  - `key` _\<string>_ Config key to retrieve
 
   - Returns: _undefined | ConfigChange\<T>_
 
